@@ -47,6 +47,30 @@ function saveData(data, fileName)
   close(fptr)
 end
 
+function saveVels(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1][1] data[i][1][2] data[i][1][3] data[i][2][1] data[i][2][2] data[i][2][3] data[i][3][1] data[i][3][2] data[i][3][3] data[i][4]], ',')
+  end
+  close(fptr)
+end
+
+function saveErrors(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1] data[i][2] data[i][3]], ',')
+  end
+  close(fptr)
+end
+
+function saveBVPs(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1] data[i][2] data[i][3] data[i][4]], ',')
+  end
+  close(fptr)
+end
+
 # prints the length of the goal's rrtLMC
 function printPathLengths(goalNode::T) where {T}
   print("\n goal.rrtLMC: $(goalNode.rrtLMC) goal.rrtTreeCost: $(goalNode.rrtLMC) \n")
@@ -445,38 +469,21 @@ end
 
 
 # saves obstacle data to a file
-function saveObstacleLocations(obstacles::List{Obstacle}, fileName)
+function saveObstacleLocations(obstacles::List{SphereObstacle}, fileName)
 
   fptr = open(fileName, "w")
 
   listNode = obstacles.front
   while listNode != listNode.child
     ob = listNode.data
-
-    if ob.kind == 6 || ob.kind == 7
-      # for time obstacles we save data about path [x, y, time, radius]
-      # then we put NaNs rows between obstacls
-
-      for i = 1:size(ob.path,1)
-        writedlm(fptr, [(reshape(ob.path[i,:], 1, length(ob.path[i,:])) + [ob.position 0.0]) ob.radius], ',')
-      end
-      writedlm(fptr, [NaN NaN NaN NaN], ',')
-
-
+    if ob.obstacleUnused || ob.expired
       listNode = listNode.child
       continue
     end
 
-    if ob.kind != 3 && ob.kind != 4  && ob.kind != 5
-      println("warning cannot save non-polygon obstacle to file (not implimented) ")
-      listNode = listNode.child
-      continue
-    end
-
-    if ob.obstacleUnused
-      listNode = listNode.child
-      continue
-    end
+    writedlm(fptr, reshape([ob.position[1], ob.position[2], ob.position[3], ob.radius], 1, 4), ',')
+    listNode = listNode.child
+    continue
 
     for i = 1:size(ob.polygon,1)
       writedlm(fptr, reshape(ob.polygon[i,:], 1, length(ob.polygon[i,:])), ',')
@@ -616,7 +623,7 @@ end
 
 
 # returns a random point from within the obstacle
-function randomSampleObs(S::CSpace, KD::TKD, ob::Obstacle) where {TKD}
+function randomSampleObs(S::CSpace, KD::TKD, ob::SphereObstacle) where {TKD}
   # calculation of the number of samples to use could be made more accurate
   # by also multiplying by the ratio of free vs total random samples we
   # have observed up to this point over the total space)
@@ -641,7 +648,7 @@ function randomSampleObs(S::CSpace, KD::TKD, ob::Obstacle) where {TKD}
     obHypervolumeBound = (2.0*ob.radius)^2 # * S.width[4]
 
     if S.hypervolume == 0.0 # need to calculate hypervolume of space
-      S.hypervolume = prod(S.width[1:2])   # * S.width[4]
+      S.hypervolume = prod(S.width[1:3])   # * S.width[4]
     end
   else
     error("not coded yet")
@@ -651,9 +658,9 @@ function randomSampleObs(S::CSpace, KD::TKD, ob::Obstacle) where {TKD}
 
   for smp = 1.0:1.0:numObsSamples
     newPoint = rand(1, S.d)
-    newPoint[1:2] = ob.position[1:2] .- ob.radius + newPoint[1:2] * ob.radius*2.0
+    newPoint[1:3] = ob.position[1:3] .- ob.radius + newPoint[1:3] * ob.radius*2.0
 
-    if quickCheck2D(ob, newPoint)
+    if quickCheck3D(ob, newPoint)
       JlistPush(S.sampleStack, newPoint)
     end
   end
@@ -661,7 +668,7 @@ end
 
 
 # adds the obstacle to the C space
-addObsToCSpace(C::CSpace, Ob::Obstacle) = listPush(C.obstacles, Ob)
+addObsToCSpace(C::CSpace, Ob::SphereObstacle) = listPush(C.obstacles, Ob)
 
 
 # returns a random obstacle of type 1 with radius, makes sure that it is not
@@ -792,6 +799,54 @@ function readDiscoverablecObstaclesFromfile(S::CSpace, filename, obsMult)
         error("unknown behavoiur type")
       end
 
+      addObsToCSpace(S, ob)
+    end
+
+
+  end
+
+  close(a)
+end
+
+function readDiscoverable3DObstaclesFromfile(S::CSpace, filename, obsMult)
+  a = open(filename, "r")
+
+  # get the number of polygons
+  P = parse(Int, readline(a))
+
+  for p = 1:P
+    # get the numer of point in this polygon
+
+    centerT = Array{Float64}(undef, 3)
+    centerT[:] = str2array(readline(a))
+    center = [centerT[1] centerT[2] centerT[3]]
+
+    radius = parse(Float64, readline(a))
+
+    obsBehavourType = parse(Int, readline(a))
+
+    for i = 1:obsMult
+      ob = SphereObstacle(center, radius)
+
+      if obsBehavourType == 0 # normal obstacle
+        ob.senseableObstacle = false
+        ob.obstacleUnusedAfterSense = false
+        ob.obstacleUnused = false
+        println("normal")
+      elseif obsBehavourType == -1 # vanishes when robot is within range
+        ob.senseableObstacle = true
+        ob.obstacleUnusedAfterSense = true
+        ob.obstacleUnused = false
+        println("vanishing")
+      elseif obsBehavourType == 1  # appears when robot is within range
+        ob.senseableObstacle = true
+        ob.obstacleUnusedAfterSense = false
+        ob.obstacleUnused = true
+        println("appearing")
+      else
+        error("unknown behavoiur type")
+      end
+      ob.lifeSpan = 100.0
       addObsToCSpace(S, ob)
     end
 
@@ -1057,29 +1112,28 @@ end
 
 # returns the min distance squared between the point and the segment
 # [startPoint, endPoint] assumes a 2d space
-function distanceSqrdPointToSegment(point::Array{Float64}, startPoint::Array{Float64}, endPoint::Array{Float64})
-  vx = point[1]-startPoint[1];
-  vy = point[2]-startPoint[2];
-  ux = endPoint[1]-startPoint[1];
-  uy = endPoint[2]-startPoint[2] ;
-  determinate = vx*ux + vy*uy;
+function distancePointToSegment(point::Array{Float64}, startPoint::Array{Float64}, endPoint::Array{Float64})
+  edgeLen = dist(startPoint, endPoint);
 
-  if determinate <= 0
-    #thisClosestPoint = startPoint;
-    return vx*vx + vy*vy;
-  else
-    len = ux*ux + uy*uy;
-    if determinate >= len
-      #thisClosestPoint = endPoint;
-      return (endPoint[1]-point[1])^2 + (endPoint[2]-point[2])^2;
-    else
-      #ex = ux / sqrt(len);
-      #ey = uy / sqrt(len);
-      #f = ex * vx + ey * vy;
-      #thisClosestPoint = [startPoint[1] + f * ex,  startPoint[2] + f * ey];
-      return (ux*vy-uy*vx)^2 / len;
-    end
-  end
+  t = max(0, min(1, dot((point - startPoint), (endPoint - startPoint))/edgeLen))
+  closePt = ((startPoint) + (t * (endPoint - startPoint)))
+  return dist(point, closePt)
+
+  #P12 = dist(point, startPoint);
+  #P13 = dist(point, endPoint);
+  #P23 = dist(startPoint, endPoint);
+  #dist(startPoint, endPoint);
+  #if (P12 > P13)
+  #  angle = abs(acos((P12^2 + P23^2 - P13^2)/(2*P12*P23)));
+  #else
+  #  angle = abs(acos((P13^2 + P23^2 - P12^2)/(2*P13*P23)));
+  #end
+  #angle = angle*(360/(2*pi))
+  #if (angle > 90)
+  #  return min(P12, P13)
+  #else
+  #  return distPoint2Line(point[1:3], startPoint[1:3], endPoint[1:3])
+  #end
 end
 
 # this returns the distance of closest point on the bouandary of polygon to point
@@ -1255,7 +1309,7 @@ end
 
 # checks if the 2D point is inside the obstacle
 # (does not account for robot radius)
-function quickCheck2D(thisObstacle::Obstacle, point::Array{Float64})
+function quickCheck2D(thisObstacle::SphereObstacle, point::Array{Float64})
   pointInsideObstacle = false
 
   if thisObstacle.obstacleUnused || thisObstacle.lifeSpan <= 0
@@ -1263,50 +1317,26 @@ function quickCheck2D(thisObstacle::Obstacle, point::Array{Float64})
   end
 
   # do a quick check based on a lower bound of the distance to the obstacle
-  if (1 <= thisObstacle.kind <= 5) && Wdist(thisObstacle.position, point) > thisObstacle.radius
+  if (Wdist(thisObstacle.position, point) > thisObstacle.radius)
     return false
   end
 
-  if thisObstacle.kind == 1
-    # lower bound is actual distance in this case
-    return true
-  elseif thisObstacle.kind == 2 || thisObstacle.kind == 4 # added latter recently, might not supposed to be here
-    error("need to impliment this")
+  return true
+end
 
-  elseif thisObstacle.kind == 3
+function quickCheck3D(thisObstacle::SphereObstacle, point::Array{Float64})
+  pointInsideObstacle = false
 
-    # if that doesn't collide then need to check vs the polygon itself
-    if pointInPolygon(point, thisObstacle.polygon)
-      return true
-    end
-  elseif thisObstacle.kind == 5
-    # if that doesn't collide then need to check vs the polygon itself
-    if pointInPolygon(point[1:2], thisObstacle.polygon)
-      if segInPrism(thisObstacle, point, point)
-        return true
-      end
-    end
-  elseif thisObstacle.kind == 6 || thisObstacle.kind == 7
-
-    # first need to transform position and polygon to the approperiate position at
-    # the time of the point, based on the former's path through time
-    (dx, dy) = findTransformObsToTimeOfPoint(thisObstacle, point)
-
-    # do a quick check based on a lower bound of the distance to the obstacle
-    if Wdist(thisObstacle.position + [dx dy] , point) > thisObstacle.radius
-      return false
-    end
-
-    # transform polygon and then do a normal check vs it
-    thisObstacle.polygon[:,1] = thisObstacle.originalPolygon[:,1] .+ dx
-    thisObstacle.polygon[:,2] = thisObstacle.originalPolygon[:,2] .+ dy
-    if pointInPolygon(point, thisObstacle.polygon)
-      return true
-    end
-
+  if thisObstacle.obstacleUnused || thisObstacle.lifeSpan <= 0
+    return false
   end
 
-  return false
+  # do a quick check based on a lower bound of the distance to the obstacle
+  if Wdist(thisObstacle.position, point) > thisObstacle.radius
+    return false
+  end
+
+  return true
 end
 
 # checks if the point is inside any obstacles
@@ -1340,7 +1370,7 @@ quickCheck(C::CSpace{T}, node::RRTNode{T}) where {T} = quickCheck(C, node.positi
 # if -not- it retruns the distance to the closest point on that obstacle
 # minDist is the closest point found so far (init to inf before calling)
 # robot radius is the radius of this robot
-function explicitPointCheck2D(thisObstacle::Obstacle, point::Array{Float64}, minDist::Float64, robotRadius::Float64)
+function explicitPointCheck2D(thisObstacle::SphereObstacle, point::Array{Float64}, minDist::Float64, robotRadius::Float64)
 
   thisDist::Float64 = convert(Float64,Inf)
 
@@ -1348,79 +1378,45 @@ function explicitPointCheck2D(thisObstacle::Obstacle, point::Array{Float64}, min
     return (false, minDist)
   end
 
-  if (1 <= thisObstacle.kind <= 5)
     # do a quick check to see if any points on the obstacle might be closer
     # to point than minDist based on the ball around the obstacle
 
     # calculate distance from robot boundary to obstacle center
-    thisDist = Wdist(thisObstacle.position, point) - robotRadius
-    if thisDist - thisObstacle.radius > minDist
-      return (false, minDist)
-    end
+  thisDist = Wdist(thisObstacle.position, point) - robotRadius
+  if thisDist - thisObstacle.radius > minDist
+    return (false, minDist)
   end
 
-  if thisObstacle.kind == 1
-    # ball is the actual obstacle, so we have a new minimum
-    thisDist = thisDist - thisObstacle.radius
-    if thisDist < 0.0
-      return (true, 0.0)
-    end
+  # ball is the actual obstacle, so we have a new minimum
+  thisDist = thisDist - thisObstacle.radius
+  if thisDist < 0.0
+    return (true, 0.0)
+  end
 
-  elseif thisObstacle.kind == 2
-    error("need to impliment this")
+  return (false, min(minDist, thisDist))
+end
 
-  elseif thisObstacle.kind == 3
+function explicitPointCheck3D1(thisObstacle::SphereObstacle, point::Array{Float64}, minDist::Float64, robotRadius::Float64)
 
-    if pointInPolygon(point, thisObstacle.polygon)
-       return (true, 0.0)
-    end
-    thisDist = sqrt(distToPolygonSqrd(point, thisObstacle.polygon)) - robotRadius
+  thisDist::Float64 = convert(Float64,Inf)
 
-    if thisDist < 0.0
-      return (true, 0.0)
-    end
+  if thisObstacle.obstacleUnused || thisObstacle.lifeSpan <= 0
+    return (false, minDist)
+  end
 
-  elseif thisObstacle.kind == 5
+  # do a quick check to see if any points on the obstacle might be closer
+  # to point than minDist based on the ball around the obstacle
 
-    if pointInPolygon(point[1:2], thisObstacle.polygon)
-      if segInPrism(thisObstacle, point, point)
-        return (true, 0.0)
-      end
-    end
-    thisDist = sqrt(distToPolygonPrismSqrd(point, thisObstacle.polygon, thisObstacle)) - robotRadius
+  # calculate distance from robot boundary to obstacle center
+  thisDist = Wdist(thisObstacle.position, point) - robotRadius
+  if thisDist - thisObstacle.radius > minDist
+    return (false, minDist)
+  end
 
-    if thisDist < 0.0
-      return (true, 0.0)
-    end
-  elseif thisObstacle.kind == 6 || thisObstacle.kind == 7
-
-    # first need to transform position and polygon to the approperiate position at
-    # the time of the point, based on the former's path through time
-    (dx, dy) = findTransformObsToTimeOfPoint(thisObstacle, point)
-
-    # do a quick check to see if any points on the obstacle might be closer
-    # to point than minDist based on the ball around the obstacle
-
-    # calculate distance from robot boundary to obstacle center
-    thisDist = Wdist(thisObstacle.position + [dx dy], point) - robotRadius
-    if thisDist - thisObstacle.radius > minDist
-      return (false, minDist)
-    end
-
-    # transform polygon and then do the rest of a normal check
-    thisObstacle.polygon[:,1] = thisObstacle.originalPolygon[:,1] .+ dx
-    thisObstacle.polygon[:,2] = thisObstacle.originalPolygon[:,2] .+ dy
-
-    if pointInPolygon(point, thisObstacle.polygon)
-       return (true, 0.0)
-    end
-    thisDist = sqrt(distToPolygonSqrd(point, thisObstacle.polygon)) - robotRadius
-    if thisDist < 0.0
-      return (true, 0.0)
-    end
-
-  else
-    error("need to impliment this")
+  # ball is the actual obstacle, so we have a new minimum
+  thisDist = thisDist - thisObstacle.radius
+  if thisDist < 0.0
+    return (true, 0.0)
   end
 
   return (false, min(minDist, thisDist))
@@ -1469,10 +1465,44 @@ function explicitPointCheck(C::CSpace{T}, point::Array{Float64}) where {T}
   return (false, retCert)
 end
 
+function explicitPointCheck3D(C::CSpace{T}, point::Array{Float64}) where {T}
+
+  # if we are ignoring obstacles
+  if C.inWarmupTime
+    return (false, Inf)
+  end
+
+  # first do a quick check to see if the point can be determined
+  # in collision with minimal work. NOTE a quick check is NOT an implicit check
+
+  # the point in not inside any of the obstacles, but it may still be in
+  # collision due to the robot radius
+  R = div(C.d,2)
+
+  retCert = convert(Float64,Inf)
+
+  obstacleListNode = C.obstacles.front
+  for i = 1:C.obstacles.length
+
+    (thisRetVal, thisCert) = explicitPointCheck3D1(obstacleListNode.data, point, retCert, C.robotRadius)
+
+    if thisRetVal
+      return (true, 0.0)
+    end
+    if thisCert < retCert
+      retCert = thisCert
+    end
+    obstacleListNode = obstacleListNode.child #iterate
+  end
+
+
+  return (false, retCert)
+end
 
 # checks if the node is in collision with an obstacle
 # (DOES account for robot radii)
 explicitNodeCheck(C::CSpace{T}, node::RRTNode{T}) where {T} = explicitPointCheck(C, node.position)
+explicitNodeCheck3D(C::CSpace{T}, node::RRTNode{T}) where {T} = explicitPointCheck3D(C, node.position)
 
 
 # returns true if some part of the segment [startPoint endPoint]
@@ -1652,12 +1682,34 @@ function explicitEdgeCheck2D(thisObstacle::Obstacle, startPoint::Array{Float64},
   return false
 end
 
+function explicitEdgeCheck3D(thisObstacle::SphereObstacle, startPoint::Array{Float64}, endPoint::Array{Float64}, robotRadius::Float64)
+
+  if (thisObstacle.obstacleUnused || thisObstacle.lifeSpan <= 0 || thisObstacle.radius == NaN)
+    return false
+  end
+
+
+  # do a quick check to see if any points on the obstacle might be closer
+  # to the edge than robot radius
+
+    # calculate distance squared from center of the obstacle to the edge
+    # (projected into first two dims)
+  #distS = distPoint2Line(thisObstacle.position, startPoint[1:3], endPoint[1:3])
+  distS = distancePointToSegment(thisObstacle.position, startPoint, endPoint)
+  if distS > (robotRadius + thisObstacle.radius)
+    return false
+  end
+
+  return true
+
+end
+
 
 
 
 # this checks if the edge is in collision with any obstacles in the C-space
 # recall that Edge is aliased to the particular type of edge being used
-function explicitEdgeCheck(C::CSpace{T}, edge::Edge) where {T}
+function explicitEdgeCheck(C::CSpace{T}, edge::Edge, verbose::Bool = false) where {T}
 
   # if we are ignoring obstacles
   if C.inWarmupTime
@@ -1669,9 +1721,15 @@ function explicitEdgeCheck(C::CSpace{T}, edge::Edge) where {T}
   for i = 1:C.obstacles.length
 
     if explicitEdgeCheck(C, edge, obstacleListNode.data)
+      #if (verbose)
+        #println("Crash!")
+        #println(obstacleListNode.data.position)
+        #println(obstacleListNode.data.radius)
+        #println(edge.startNode.position)
+        #println(edge.endNode.position)
+      #end
       return true
     end
-
     obstacleListNode = obstacleListNode.child #iterate
   end
   return false
@@ -2766,7 +2824,7 @@ function findNewTarget(S::TS, KD::TKD, R::RobotData, hyberBallRad::Float64) wher
 
   println("move target has become invalid")
   searchBallRad = max(hyberBallRad, dist(R.robotPose, R.nextMoveTarget.position))
-  maxSearchBallRad = dist(S.lowerBounds, S.upperBounds)
+  maxSearchBallRad = dist(1.5*S.lowerBounds, 1.5*S.upperBounds)
   searchBallRad = min(searchBallRad, maxSearchBallRad)
   L = kdFindWithinRange(KD, searchBallRad, R.robotPose)
   dummyRobotNode = RRTNode{Float64}(R.robotPose) # a temp node at robot pose
@@ -2782,13 +2840,10 @@ function findNewTarget(S::TS, KD::TKD, R::RobotData, hyberBallRad::Float64) wher
     ptr = L.front
     while ptr != ptr.child
       neighborNode = ptr.data
-
       thisEdge = newEdge(dummyRobotNode, neighborNode)
       calculateTrajectory(S, thisEdge)
-
-      if validMove(S, thisEdge) && !explicitEdgeCheck(S, thisEdge)
+      if validMove(S, thisEdge) && !explicitEdgeCheck(S, thisEdge, true)
         # a safe point was found, see if it is the best so far
-
         distToGoal = neighborNode.rrtLMC + thisEdge.dist
         if distToGoal < bestDistToGoal && validMove(S, thisEdge)
 
@@ -3046,79 +3101,25 @@ end
 # this returns a -rangeList- (see the KD tree code) containing all points
 # that are in conflict with the obstacle, NOTE that the rangeList
 # must be DESTROYED PROPERLY using emptyRangeList(L) to avoid problems
-function findPointsInConflictWithObstacle(S::TS, KD::TKD, ob::Obstacle, root::T) where{TS, TKD, T}
+function findPointsInConflictWithObstacle(S::TS, KD::TKD, ob::SphereObstacle, root::T) where{TS, TKD, T}
 
   # find points that are in conflict with the obstacle, start by over-estimate,
   # finding all within the following bounding hyper-sphere(s)
   L::JList{T} = JList{typeof(KD.root)}()
-  if 1 <= ob.kind <= 5
-    # 2D obstacle
-    if !S.spaceHasTime && !S.spaceHasTheta
-      # euclidian space without time
-      searchRange = S.robotRadius + S.delta + ob.radius
-      L = kdFindWithinRange(KD, searchRange, ob.position)
-    elseif !S.spaceHasTime && S.spaceHasTheta
-      # Dubin's robot without time [x,y, 0.0, theta]
-      searchRange = S.robotRadius + S.delta + ob.radius + pi
-      obsCenterDubins = [ob.position[1:2]' 0.0 pi]
-      L = kdFindWithinRange(KD, searchRange, obsCenterDubins)
-    else
-      error( "this type of obstacle not coded for this type of space")
-    end
-  elseif 6 <= ob.kind <= 7
-    # 2D obstacle with time, find points within range of each point along the
-    # time path, accumulating all points that are in any of the bounding
-    # hyper-spheres
-
-    baseSearchRange = S.robotRadius + S.delta + ob.radius
-
-    ## for debugging only:
-    #AllqueryPoses = zeros(Float64, size(ob.path,1)-1, 3)
-
-    for i = 1:size(ob.path,1)
-      # make query pose the middle of the edge, and add 1/2 edge length
-      # through the C-space to the baseSearchRange (this is an overestimate)
-
-      if size(ob.path,1) == 1
-        j = 1
-      else
-        j = i+1
-      end
-
-      val = reshape(ob.path[i,:] + ob.path[j,:], 1, length(ob.path[i,:]))
-      queryPose = [ob.position 0.0] + val/2.0
-
-      if S.spaceHasTheta
-        # Dubins Car
-        queryPose = [queryPose pi]
-      end
-
-      ## for debugging only:
-      #AllqueryPoses[i-1,:] = queryPose
-
-      searchRange = baseSearchRange + euclidianDist(ob.path[i,:], ob.path[j,:])/2.0
-
-      if S.spaceHasTheta
-        searchRange += pi
-      end
-
-
-      if i == 1
-        L = kdFindWithinRange(KD, searchRange, queryPose)
-      else
-        kdFindMoreWithinRange(KD, searchRange, queryPose, L)
-      end
-
-      if j == size(ob.path,1)
-        break
-      end
-    end
-
-    ## for debugging only:
-    #saveData(AllqueryPoses, "temp/Qnodes_$(fileCounter).txt")
+  # 2D obstacle
+  if !S.spaceHasTime && !S.spaceHasTheta
+    # euclidian space without time
+    searchRange = S.robotRadius + S.delta + ob.radius
+    L = kdFindWithinRange(KD, searchRange, ob.position)
+  elseif !S.spaceHasTime && S.spaceHasTheta
+    # Dubin's robot without time [x,y, 0.0, theta]
+    searchRange = S.robotRadius + S.delta + ob.radius + pi
+    obsCenterDubins = [ob.position[1:3]' 0.0 pi]
+    L = kdFindWithinRange(KD, searchRange, obsCenterDubins)
   else
-    error("this case not coded yet")
+    error( "this type of obstacle not coded for this type of space")
   end
+  
   return L
 end
 
@@ -3126,7 +3127,7 @@ end
 # This adds the obstacle (checks for edge conflicts with the obstacle and then
 # puts the affected nodes into the approperiate heaps)
 function addNewObstacle(S::TS, KD::TKD, Q::TQ,
-  ob::Obstacle, root::T, fileCounter::Int, R::TR) where {TS, TKD, TQ, T, TR}
+  ob::SphereObstacle, root::T, fileCounter::Int, R::TR) where {TS, TKD, TQ, T, TR}
   ob.obstacleUnused = false
 
   # find all point that are in conflict with the obstacle
@@ -3201,12 +3202,13 @@ end
 # This removes the obstacle (checks for edge conflicts with the obstacle and then
 # puts the affected nodes into the approperiate heaps)
 function removeObstacle(S::TS, KD::TKD, Q::TQ,
-  ob::Obstacle, root::T, hyberBallRad::Float64, timeElapsed::Float64,
+  ob::SphereObstacle, root::T, hyberBallRad::Float64, timeElapsed::Float64,
   moveGoal::T) where{T, TS, TKD, TQ}
 
   # find all point that were in conflict with the obstacle
   L = findPointsInConflictWithObstacle(S, KD, ob, root)
-
+  ob.expired = true
+  ob.obstacleUnused = true
   #for all nodes that might be in conflict
   while L.length > 0
     (thisNode, key) = popFromRangeList(L)
@@ -3746,7 +3748,7 @@ end
 ################################################################################
 
 # saves obstacle data to a file
-function saveOriginalObstacleLocations_Q(obstacles::List{Obstacle}, fileName)
+function saveOriginalObstacleLocations_Q(obstacles::List{SphereObstacle}, fileName)
 
   fptr = open(fileName, "w")
 
@@ -3754,25 +3756,9 @@ function saveOriginalObstacleLocations_Q(obstacles::List{Obstacle}, fileName)
   while listNode != listNode.child
     ob = listNode.data
 
-    if ob.kind == 6 || ob.kind == 7
-      # for time obstacles we save data about path [x, y, time, radius]
-      # then we put NaNs rows between obstacls
 
-      for i = 1:size(ob.path,1)
-        writedlm(fptr, [(reshape(ob.path[i,:], 1, length(ob.path[i,:])) + [ob.position 0.0]) ob.radius], ',')
-      end
-      writedlm(fptr, [NaN NaN NaN NaN], ',')
-
-
-      listNode = listNode.child
-      continue
-    end
-
-    if ob.kind != 3 && ob.kind != 4  && ob.kind != 5
-      println("warning cannot save non-polygon obstacle to file (not implimented) ")
-      listNode = listNode.child
-      continue
-    end
+    listNode = listNode.child
+    continue
 
     if ob.obstacleUnused
       listNode = listNode.child
@@ -3809,6 +3795,6 @@ function saveRRTPath_Q(S::TS, node::T, root::T, robot::RobotData{T}, fileName) w
     thisNode = thisNode.rrtParentEdge.endNode
     i += 1 # added to detect for inf paths
   end
-  writedlm(fptr, hcat(thisNode.position[1,1:2]'), ',')
+  writedlm(fptr, hcat(thisNode.position[1,1:3]'), ',')
   close(fptr)
 end

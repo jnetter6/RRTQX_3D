@@ -83,21 +83,32 @@ function staticObstacleAugmentation(filename, augDist)
 end
 
 # save augmented polygon into ob.polygon, not change ob.polygonWithoutAug
+#function obstacleAugmentation(S::CSpace, augDist::Float64)
+#    Ball_aug = Ball2(zeros(2), augDist)
+#    VPolygon_aug = convert(VPolygon, LazySets.Approximations.overapproximate(Ball_aug, .01))
+#    Vrep_aug = vrep(VPolygon_aug.vertices) # Polyhedra.jl
+#    listItem = S.obstacles.front
+#    while (listItem != listItem.child)
+#        # if !listItem.data.obstacleUnused
+#        # obs = deepcopy(listItem)
+#        listItem.data.radius = (listItem.data.radiusWithoutAug + augDist)
+#        Vrep_obstacle = vrep(listItem.data.polygonWithoutAug)
+#        V_augmentedObstacle = Vrep_obstacle + Vrep_aug
+#        listItem.data.polygon = vcat(convex_hull(eachrow(V_augmentedObstacle.V)|>collect)'...)
+#        listItem.data.radius = sqrt(maximum(sum((broadcast(-, listItem.data.polygon, listItem.data.position)).^2, dims=2)))
+#        # listPush(S.obstacles, obs.data)
+#        # listPush(S.augObs, obs.data)
+#        # end
+#        listItem = listItem.child
+#    end
+#end
+
 function obstacleAugmentation(S::CSpace, augDist::Float64)
-    Ball_aug = Ball2(zeros(2), augDist)
-    VPolygon_aug = convert(VPolygon, LazySets.Approximations.overapproximate(Ball_aug, .01))
-    Vrep_aug = vrep(VPolygon_aug.vertices) # Polyhedra.jl
     listItem = S.obstacles.front
     while (listItem != listItem.child)
         # if !listItem.data.obstacleUnused
         # obs = deepcopy(listItem)
-        Vrep_obstacle = vrep(listItem.data.polygonWithoutAug)
-        V_augmentedObstacle = Vrep_obstacle + Vrep_aug
-        listItem.data.polygon = vcat(convex_hull(eachrow(V_augmentedObstacle.V)|>collect)'...)
-        listItem.data.radius = sqrt(maximum(sum((broadcast(-, listItem.data.polygon, listItem.data.position)).^2, dims=2)))
-        # listPush(S.obstacles, obs.data)
-        # listPush(S.augObs, obs.data)
-        # end
+        listItem.data.radius = (listItem.data.radiusWithoutAug + augDist)
         listItem = listItem.child
     end
 end

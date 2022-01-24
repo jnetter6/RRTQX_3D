@@ -31,25 +31,25 @@ function sim_RRTQX()
 
   expName = "Debug"      # the name of this experiment (for naming output files)
 
-  total_time = 3.0       # total planning time (move after this, and keep planning)
-  slice_time = 1.0/10.0       # for saving data
+  total_time = 4.0       # total planning time (move after this, and keep planning)
+  slice_time = 2.0/10.0       # for saving data
 
-  envRad = 18.0 # 50.0          # environment spans -envRad to envRad in each dimension
+  envRad = 20.0 # 50.0          # environment spans -envRad to envRad in each dimension
   robotRad = 0.5
   # robotSensorRange = 0.4
-  start3 = [-3.0 8.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  goal3 = [-3.0 -7.0] # [-40.0 40.0]    # robot comes from here (goal location of search tree) [-18.0 18.0]
-  start = [14.0 -5.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  goal = [-12.0 8.0] # [-40.0 40.0]    # robot comes from here (goal location of search tree) [-18.0 18.0]
-  start4 = [7.0 -10.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  goal4 = [3.0 6.0] # [-40.0 40.0]    # robot comes from here (goal location of search tree) [-18.0 18.0]
-  start2 = [-12.0 17.0] # [-40.0 40.0]    # robot comes from here (goal location of search tree) [-18.0 18.0]
-  goal2 = [12.0 -12.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
+  start3 = [-9.0 9.0 -6.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
+  goal3 = [11.0 -3.0 0.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start2 = [-7.0 -10.0 5.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
+  goal2 = [7.0 12.0 -0.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start4 = [7.0 -11.0 0.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
+  goal4 = [3.0 6.0 0.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start = [7.0 12.0 0.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  goal = [-7.0 -11.0 6.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
 
 
   # start = [0.0 -8.]
   # goal = [-7.0 7.]
-  obstacleFile = "environments/empty.txt" # Dynamic_5: ACC 20; Static_5: small envir;
+  obstacleFile = "environments/building.txt" # Dynamic_5: ACC 20; Static_5: small envir;
   # obstacleFile = "environments/empty.txt"
   # success(`mkdir experiments/$(expName)`)
   success(`cmd /c mkdir experiments/$(expName)`)
@@ -57,7 +57,7 @@ function sim_RRTQX()
   MoveRobot = true
   saveVideoData = true
 
-  d = 2                  # number of dimensions
+  d = 3                  # number of dimensions
   timeOut = Inf          # a backup timeout in seconds
   saveTree = true        # if true then saves the tree in out.txt
  
@@ -82,10 +82,10 @@ function sim_RRTQX()
   C4.robotVelocity = 2.0
 
   # load obstacles
-  readDiscoverablecObstaclesFromfile(C, obstacleFile, 1)
-  readDiscoverablecObstaclesFromfile(C2, obstacleFile, 1)
-  readDiscoverablecObstaclesFromfile(C3, obstacleFile, 1)
-  readDiscoverablecObstaclesFromfile(C4, obstacleFile, 1)
+  readDiscoverable3DObstaclesFromfile(C, obstacleFile, 1)
+  readDiscoverable3DObstaclesFromfile(C2, obstacleFile, 1)
+  readDiscoverable3DObstaclesFromfile(C3, obstacleFile, 1)
+  readDiscoverable3DObstaclesFromfile(C4, obstacleFile, 1)
 
   # set up sampling function
   C.randNode = randNodeOrFromStack # use this function to return random nodes
@@ -118,5 +118,11 @@ function sim_RRTQX()
   N = (size(T)[1])
 
   multirrtqx(T, N, total_time, slice_time, 10.0, 100.0, changeThresh, algorithmName, MoveRobot, saveVideoData, saveTree, dataFile)
+  #for i = 1:30
+  #  C.lastVelocity = [0.0; -1.0; 0.0]
+  #  localTemp = sim_TNNLS_B_CT_Local_Max([0.0; 0.0; 0.0], [(i/3); (i/3); (i/3)], C.lastVelocity)
+  #  println(localTemp[1])
+  #  println(sqrt((i/3)^2 * 3))
+  #end
 
 end

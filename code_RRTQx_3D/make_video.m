@@ -30,21 +30,23 @@ fig = figure(5);
 
 %costDim = 6; % this is the dimension of the nodes files that has cost
 %costDim = 5; % this is the dimension of the nodes files that has cost
-costDim = 4; % this is the dimension of the nodes files that has cost
+costDim = 5; % this is the dimension of the nodes files that has cost
 
 dir = 'temp/';
 %dir = 'temp_dynamic_2d/'
 %dir = 'temp_2d_forest/';
 %dir = 'Video_RRTMine_0.1/';
 file_ctr = 1;
-max_file_ctr = 250; %298, 314
+max_file_ctr = 130; %298, 314
 
-start_move_at_ctr = 30;
+start_move_at_ctr = 40;
 
-minXval = -30;
-minYval = -30;
-maxXval = 30;
-maxYval = 30;
+minXval = -20;
+minYval = -20;
+minZval = 0;
+maxXval = 20;
+maxYval = 20;
+maxZval = 20;
 tickInterval = 10;
 
 contourGranularity = 2.5; % x, y granularity for cost contour plot
@@ -81,6 +83,7 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
   
     x_start = 0;
     y_start = -5;
+    z_start = 0;
     
     EdgeData = load([dir 'edges_1_' num2str(file_ctr) '.txt']);
     
@@ -88,21 +91,27 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
       i = 0
       raw_x = [];
       raw_y = [];
+      raw_z = [];
     else
     
     i = size(EdgeData,1);
     raw_x = EdgeData(1:i,1);
     raw_y = EdgeData(1:i,2);
+    raw_z = EdgeData(1:i,3);
     end
     
     x = nan(i*1.5, 1);
     y = nan(i*1.5, 1);
+    z = nan(i*1.5, 1);
     
     x(1:3:end-2) = raw_x(1:2:end-1);
     x(2:3:end-1) = raw_x(2:2:end);
     
     y(1:3:end-2) = raw_y(1:2:end-1);
     y(2:3:end-1) = raw_y(2:2:end);
+    
+    z(1:3:end-2) = raw_z(1:2:end-1);
+    z(2:3:end-1) = raw_z(1:2:end-1);
     
     
 %     % do not plot edges with inf cost
@@ -119,7 +128,8 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     j = size(NodeData,1);
     node_x = NodeData(1:j,1);
     node_y = NodeData(1:j,2);
-    node_z = NodeData(1:j,costDim);
+    node_z = NodeData(1:j,3);
+    node_cost = NodeData(1:j,costDim);
 
     if exist([dir 'CnodmoveGoales_1_' num2str(file_ctr) '.txt'], 'file') 
         CNodeData = load([dir 'Cnodes_1_' num2str(file_ctr) '.txt']);
@@ -131,48 +141,78 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     if j > 0
         Cnode_x = CNodeData(1:j,1);
         Cnode_y = CNodeData(1:j,2);
+        Cnode_z = CNodeData(1:j,3);
     else
         Cnode_x = [nan nan];
         Cnode_y = [nan nan];
+        Cnode_z = [nan nan];
     end
     
     ObstacleData = load([dir 'obstacles_1_' num2str(file_ctr) '.txt']);
     if ~isempty(ObstacleData)
         obs_x = ObstacleData(:,1);
         obs_y = ObstacleData(:,2);
+        obs_z = ObstacleData(:,3);
+        obs_r = ObstacleData(:,4);
     else
         obs_x = [];
         obs_y = [];
+        obs_z = [];
+        obs_r = [];
     end
     
     MoveData = load([dir 'robotMovePath_1_' num2str(file_ctr) '.txt']);
     move_x = MoveData(:,1);
     move_y = MoveData(:,2);
+    move_z = MoveData(:,3);
     move_theta = 0 % MoveData(:,4);
     
     PathData = load([dir 'path_1_' num2str(file_ctr) '.txt']);
     path_x = PathData(:,1);
     path_y = PathData(:,2);
+    path_z = PathData(:,3);
     
-    MoveData2 = load([dir 'robotMovePath_4_' num2str(file_ctr) '.txt']);
-    move_x2 = MoveData2(:,1);
-    move_y2 = MoveData2(:,2);
+    if (file_ctr > start_move_at_ctr)
+        %Uncomment with 4
+        %MoveData2 = load([dir 'robotMovePath_4_' num2str(file_ctr) '.txt']);
+        %move_x2 = MoveData2(:,1);
+        %move_y2 = MoveData2(:,2);
+        %move_z2 = MoveData2(:,3);
     
-    MoveData3 = load([dir 'robotMovePath_3_' num2str(file_ctr) '.txt']);
-    move_x3 = MoveData3(:,1);
-    move_y3 = MoveData3(:,2);
+        MoveData3 = load([dir 'robotMovePath_3_' num2str(file_ctr) '.txt']);
+        move_x3 = MoveData3(:,1);
+        move_y3 = MoveData3(:,2);
+        move_z3 = MoveData3(:,3);
     
-    MoveData4 = load([dir 'robotMovePath_2_' num2str(file_ctr) '.txt']);
-    move_x4 = MoveData4(:,1);
-    move_y4 = MoveData4(:,2);    
+        MoveData4 = load([dir 'robotMovePath_2_' num2str(file_ctr) '.txt']);
+        move_x4 = MoveData4(:,1);
+        move_y4 = MoveData4(:,2);
+        move_z4 = MoveData4(:,3);
+    else
+        %uncomment with 4
+        %move_x2 = nan;
+        %move_y2 = [];
+        %move_z2 = [];
+        
+        move_x3 = [];
+        move_y3 = [];
+        move_z3 = [];
+        
+        move_x4 = [];
+        move_y4 = [];
+        move_z4 = [];
+    end
+        
     
     if exist([dir 'obsNodes.txt'], 'file') 
       OBSNodesData = load([dir 'obsNodes.txt']);
       OBSNodes_x = OBSNodesData(:,1);
       OBSNodes_y = OBSNodesData(:,2);
+      OBSNodes_z = OBSNodesData(:,3);
     else
       OBSNodes_x = [];
       OBSNodes_y = [];
+      OBSNodes_z = [];
     end
     
     
@@ -180,9 +220,11 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
       OBSNodesNData = load([dir 'obsNodesNeighbors.txt']);
       OBSNodesN_x = OBSNodesNData(:,1);
       OBSNodesN_y = OBSNodesNData(:,2);
+      OBSNodesN_z = OBSNodesNData(:,3);
     else
       OBSNodesN_x = [];
       OBSNodesN_y = [];
+      OBSNodesN_z = [];
     end
     
 %         figure(3)
@@ -206,27 +248,29 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     
     Xs = minXval:contourGranularity:(maxXval-1);
     Ys = minYval:contourGranularity:(maxYval-1);
+    Zs = minZval:contourGranularity:(maxZval-1);
     
     
-    Z = zeros(length(Ys), length(Xs));
-    Zmin = inf(length(Ys), length(Xs));
-    Counts = zeros(length(Ys), length(Xs)); % remember the number of points in each grid
+    Z = zeros(length(Ys), length(Xs), length(Zs));
+    Zmin = inf(length(Ys), length(Xs), length(Zs));
+    Counts = zeros(length(Ys), length(Xs), length(Zs)); % remember the number of points in each grid
     
-    for v = 1:length(node_z)
+    for v = 1:length(node_cost)
         j = max(min(floor((node_x(v) - minXval)/contourGranularity)+1, size(Z,2)),1);
         i = max(min(floor((node_y(v) - minYval)/contourGranularity)+1, size(Z,1)),1);
+        k = max(min(floor((node_z(v) - minZval)/contourGranularity)+1, size(Z,3)),1);
         
-        if isinf(node_z(v))
+        if isinf(node_cost(v))
             % nodes that are furhter than path-legnth from the goal
             % never have thier initial inf value removed (since
             % the wavefeont has not expanded to them yet)
           continue
         end
         
-        Z(i,j) = Z(i,j) + node_z(v);
-        Counts(i,j) = Counts(i,j) + 1;
+        Z(i,j,k) = Z(i,j,k) + node_cost(v);
+        Counts(i,j,k) = Counts(i,j,k) + 1;
         
-        Zmin(i,j) = min(Zmin(i,j), node_z(v));
+        Zmin(i,j,k) = min(Zmin(i,j,k), node_cost(v));
     end
     % now take the average
     Z(Z ~= 0) = Z(Z ~= 0)./Counts(Z ~= 0);
@@ -247,12 +291,22 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
         end
         
         [yZeroInds, xZeroInds] = find(Z == 0);
+        zZeroInds = zeros(length(xZeroInds));
+        for k = 1:length(xZeroInds)
+            zZeroInds(k) = (floor(xZeroInds(k)/length(Xs)) + 1);
+            xZeroInds(k) = mod(xZeroInds(k), length(Xs));
+        if (xZeroInds(k) == 0)
+            xZeroInds(k) = length(Xs);
+            zZeroInds(k) = zZeroInds(k) - 1;
+        end
+        end
         
         dZ = zeros(size(Z));
         dZmin = zeros(size(Zmin));
         for k = 1:length(xZeroInds)
             xZind = xZeroInds(k);
             yZind = yZeroInds(k);
+            zZind = zZeroInds(k);
             
             % find the "3 x 3" sub matrix around (yZind, xZind) in Z
             % note that it can be smaller if (yZind, xZind) is on the border
@@ -260,6 +314,8 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
             maxxZind = min(xZind + 1, size(Z, 2));
             minyZind = max(yZind - 1, 1);
             maxyZind = min(yZind + 1, size(Z, 1));
+            minzZind = max(zZind - 1, 1);
+            maxzZind = min(zZind + 1, size(Z, 3));
             
             if (videoFill == true) && (length(Ys)/2-2 < yZind) && (yZind < length(Ys)/2+2)  
                 % use 2 X 3 (equal to and below) so that don't get cost
@@ -268,10 +324,11 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
                 minyZind = yZind;
             end
             
-            subZ = Z(minyZind:maxyZind, minxZind:maxxZind);
+            subZ = Z(minyZind:maxyZind, minxZind:maxxZind, minzZind:maxzZind);
+            testSize = size(dZ);
             if  sum(subZ(:) ~= 0) > 1
-                dZ(yZind, xZind) = sum(subZ(:))/sum(subZ(:) ~= 0);
-                dZmin(yZind, xZind) = min(subZ(subZ(:) ~= 0));
+                dZ(yZind, xZind, zZind) = sum(subZ(:))/sum(subZ(:) ~= 0);
+                dZmin(yZind, xZind, zZind) = min(subZ(subZ(:) ~= 0));
             end
         end
         Z = Z+dZ;
@@ -281,44 +338,58 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     % transform nodes so we can plot them on the contour plot
     c_node_x = (node_x-minXval)/contourGranularity+.5;
     c_node_y = (node_y-minYval)/contourGranularity+.5;
+    c_node_z = (node_z-minZval)/contourGranularity+.5;
     
     % transform path so we can plot it on the contour plot
     c_path_x = (path_x-minXval)/contourGranularity+.5;
     c_path_y = (path_y-minYval)/contourGranularity+.5;
+    c_path_z = (path_z-minZval)/contourGranularity+.5;
     
     % transform move path so we can plot it on the contour plot
     c_move_x = (move_x-minXval)/contourGranularity+.5;
     c_move_y = (move_y-minYval)/contourGranularity+.5;
-    
-    c_move_x2 = (move_x2-minXval)/contourGranularity+.5;
-    c_move_y2 = (move_y2-minYval)/contourGranularity+.5;
+    c_move_z = (move_z-minZval)/contourGranularity+.5;
+    if (~isnan(move_x4))
+    %uncomment with 4
+%     c_move_x2 = (move_x2-minXval)/contourGranularity+.5;
+%     c_move_y2 = (move_y2-minYval)/contourGranularity+.5;
+%     c_move_z2 = (move_z2-minZval)/contourGranularity+.5;
     
     c_move_x3 = (move_x3-minXval)/contourGranularity+.5;
     c_move_y3 = (move_y3-minYval)/contourGranularity+.5;
+    c_move_z3 = (move_z3-minZval)/contourGranularity+.5;
     
     c_move_x4 = (move_x4-minXval)/contourGranularity+.5;
     c_move_y4 = (move_y4-minYval)/contourGranularity+.5;
+    c_move_z4 = (move_z4-minZval)/contourGranularity+.5;
+    end
     c_move_theta = move_theta - pi/2;
     
     % transform edges
     c_x = (x-minXval)/contourGranularity+.5;
     c_y = (y-minYval)/contourGranularity+.5;
+    c_z = (z-minZval)/contourGranularity+.5;
     
     % transform obstacles
     c_obs_x = (obs_x-minXval)/contourGranularity+.5;
     c_obs_y = (obs_y-minYval)/contourGranularity+.5;
+    c_obs_z = (obs_z-minZval)/contourGranularity+.5;
     
     % calculate ticks
     theXticks = -50:tickInterval:maxXval;
     theYticks = -50:tickInterval:maxXval;
+    theZticks = -50:tickInterval:maxZval;
     c_theXticks = (theXticks-minXval)/contourGranularity+.5;
     c_theYticks = (theYticks-minYval)/contourGranularity+.5;
+    c_theZticks = (theZticks-minZval)/contourGranularity+.5;
    
     c_OBSNodes_x = (OBSNodes_x-minXval)/contourGranularity+.5;
     c_OBSNodes_y = (OBSNodes_y-minXval)/contourGranularity+.5;
+    c_OBSNodes_z = (OBSNodes_z-minZval)/contourGranularity+.5;
     
     c_OBSNodesN_x = (OBSNodesN_x-minXval)/contourGranularity+.5;
     c_OBSNodesN_y = (OBSNodesN_y-minXval)/contourGranularity+.5;
+    c_OBSNodesN_z = (OBSNodesN_z-minZval)/contourGranularity+.5;
     
     % make path start at robot pose and not move goal 
     %c_path_x(1) = c_move_x(end);
@@ -354,13 +425,16 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     % make costs above robot cost color grey
     robot_Zind_x = floor(c_move_x(end))+1;
     robot_Zind_y = floor(c_move_y(end))+1;
+    robot_Zind_z = floor(c_move_z(end))+1;
     
     % but keep cells near robot original values
     robot_minxZind = max(robot_Zind_x - 1, 1);
     robot_maxxZind = min(robot_Zind_x + 1, size(Z, 2));
     robot_minyZind = max(robot_Zind_y - 1, 1);
-    robot_maxyZind = min(robot_Zind_y + 1, size(Z, 1)); 
-    robotSamplePatch = Zmin(robot_minyZind:robot_maxyZind, robot_minxZind:robot_maxxZind);
+    robot_maxyZind = min(robot_Zind_y + 1, size(Z, 1));
+    robot_minzZind = max(robot_Zind_z - 1, 1);
+    robot_maxzZind = min(robot_Zind_z + 1, size(Z, 3));
+    robotSamplePatch = Zmin(robot_minyZind:robot_maxyZind, robot_minxZind:robot_maxxZind, robot_minzZind:robot_maxzZind);
 
     robotSampleVal = mean(robotSamplePatch(~isinf(robotSamplePatch)));
     %robotSampleVal = Zmin(robot_Zind_y, robot_Zind_x);
@@ -374,7 +448,7 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     dividingCost = countorLevels(plotContourValIndRobotVal);
     
     Zmin(Zmin > dividingCost) = Inf;
-    Zmin(robot_minyZind:robot_maxyZind, robot_minxZind:robot_maxxZind) = robotSamplePatch;
+    Zmin(robot_minyZind:robot_maxyZind, robot_minxZind:robot_maxxZind, robot_minzZind:robot_maxzZind) = robotSamplePatch;
     
     tempcolormap = mycolormap;
     tempcolormap(plotContourValIndAboveRobotVal:end,:) = 1;
@@ -393,13 +467,14 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     set(fig,'OuterPosition', [100, 100, 576*1.5, 512*1.5]);
     
     clf
-    colormap(tempcolormap)
-    contourf(Zmin,countorLevels, 'EdgeColor', 'none')
+    %colormap(tempcolormap)
+    %contourf(Zmin,countorLevels, 'EdgeColor', 'none')
     hold on
-    plot(c_x, c_y, 'Color',[0.3,0.3,0.3],'LineWidth',.5)
-    plot(c_node_x, c_node_y, '.', 'Color',[0.3,0.3,0.3],'MarkerSize',.5)
-    plot(c_move_x, c_move_y, 'k', 'LineWidth',3)
-    plot(c_move_x, c_move_y, 'b', 'LineWidth',3)
+    view(45,45)
+    %plot3(c_x, c_y, c_z, 'Color',[0.3,0.3,0.3],'LineWidth',.5)
+    plot3(c_node_x, c_node_y, c_node_z, '.', 'Color',[0.3,0.3,0.3],'MarkerSize',.5)
+    plot3(c_move_x, c_move_y, c_move_z, 'k', 'LineWidth',3)
+    plot3(c_move_x, c_move_y, c_move_z, 'b', 'LineWidth',3)
     %plot(c_path_x, c_path_y, 'k', 'LineWidth',3)
     %plot(c_path_x, c_path_y, 'w', 'LineWidth',1)
     %plot(c_path_x2, c_path_y, 'k', 'LineWidth',3)
@@ -409,31 +484,75 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     %plot(c_path_x4, c_path_y, 'k', 'LineWidth',3)
     %plot(c_path_x4, c_path_y, 'w', 'LineWidth',1)
     %contour(Zmin,countorLevels(1:(maxPlotcontourValindPlusOne-1)), 'k')
-    for p = 1:length(polyStartInds)
-       poly_inds = polyStartInds(p):polyEndEnds(p);
-       patch(c_obs_x(poly_inds), c_obs_y(poly_inds), 'k') 
-    end
-    plot(c_obs_x,c_obs_y, 'w', 'LineWidth',1)
+    %for p = 1:length(polyStartInds)
+    %   poly_inds = polyStartInds(p):polyEndEnds(p);
+    %   patch(c_obs_x(poly_inds), c_obs_y(poly_inds), 'k') 
+    %end
+    plot3(c_obs_x,c_obs_y, c_obs_z, 'w', 'LineWidth',1)
     if start_move_at_ctr > file_ctr
-      plot(c_node_x(1), c_node_y(1), 'sw', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor','w','MarkerSize',8)
+      plot3(c_node_x(1), c_node_y(1), c_node_z(1), 'sw', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor','w','MarkerSize',8)
     else
-      plot(c_path_x(end), c_path_y(end), 'sw', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor','w','MarkerSize',8)
+      plot3(c_path_x(end), c_path_y(end), c_node_z(end), 'sw', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor','w','MarkerSize',8)
     end
-    plot(c_move_x(end), c_move_y(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.5,0.5,0.5],'MarkerSize',20)
-    plot(c_move_x2(end), c_move_y2(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',12)
-    plot(c_move_x3(end), c_move_y3(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',12)
-    plot(c_move_x4(end), c_move_y4(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.319607843, 0.937254902],'MarkerSize',12)
-
+    plot3(c_move_x(end), c_move_y(end), c_move_z(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.5,0.5,0.5],'MarkerSize',20)
+    if (~isnan(move_x4))
+        %uncomment with 4
+%     plot3(c_move_x2(end), c_move_y2(end), c_move_z2(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',12)
+    plot3(c_move_x3(end), c_move_y3(end), c_move_z3(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',12)
+    plot3(c_move_x4(end), c_move_y4(end), c_move_z4(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.319607843, 0.937254902],'MarkerSize',12)
+    end
+    
+    if (size(ObstacleData,1) > 10)
+        for k = 1:10
+            obs_x = (ObstacleData(k,1)-minXval)/contourGranularity+.5;
+            obs_y = (ObstacleData(k,2)-minYval)/contourGranularity+.5;
+            obs_z = (ObstacleData(k,3)-minZval)/contourGranularity+.5;
+            if (ObstacleData(k,4) > 0)
+                [temp1, temp2, temp3] = sphere;
+                temp1 = temp1 * ObstacleData(k,4)/contourGranularity;
+                temp2 = temp2 * ObstacleData(k,4)/contourGranularity;
+                temp3 = temp3 * ObstacleData(k,4)/contourGranularity;
+                surf((temp1 + obs_x), (temp2 + obs_y), (temp3 + obs_z), ones(size(temp1))*50);
+                %plot3(obs_x, obs_y, obs_z, 'o', 'LineWidth', 1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.7, 0.7, 0.7],'MarkerSize', 20*ObstacleData(k,4))
+            end
+        end
+        k = size(ObstacleData,1);
+        obs_x = (ObstacleData(k,1)-minXval)/contourGranularity+.5;
+        obs_y = (ObstacleData(k,2)-minYval)/contourGranularity+.5;
+        obs_z = (ObstacleData(k,3)-minZval)/contourGranularity+.5;
+        if (ObstacleData(k,4) > 0)
+            [temp1, temp2, temp3] = sphere;
+            temp1 = temp1 * ObstacleData(k,4)/contourGranularity;
+            temp2 = temp2 * ObstacleData(k,4)/contourGranularity;
+            temp3 = temp3 * ObstacleData(k,4)/contourGranularity;
+            surf((temp1 + obs_x), (temp2 + obs_y), (temp3 + obs_z), ones(size(temp1)));
+            %plot3(obs_x, obs_y, obs_z, 'o', 'LineWidth', 1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.7, 0.7, 0.7],'MarkerSize', 20*ObstacleData(k,4))
+        end
+    else
+        for k = 1:size(ObstacleData,1)
+            obs_x = (ObstacleData(k,1)-minXval)/contourGranularity+.5;
+            obs_y = (ObstacleData(k,2)-minYval)/contourGranularity+.5;
+            obs_z = (ObstacleData(k,3)-minZval)/contourGranularity+.5;
+            if (ObstacleData(k,4) > 0)
+                [temp1, temp2, temp3] = sphere;
+                temp1 = temp1 * ObstacleData(k,4)/contourGranularity;
+                temp2 = temp2 * ObstacleData(k,4)/contourGranularity;
+                temp3 = temp3 * ObstacleData(k,4)/contourGranularity;
+                surf((temp1 + obs_x), (temp2 + obs_y), (temp3 + obs_z), zeros(size(temp1)));
+                %plot3(obs_x, obs_y, obs_z, 'o', 'LineWidth', 1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.7, 0.7, 0.7],'MarkerSize',20*ObstacleData(k,4))
+            end
+        end
+    end
 %    plot(raw_x(2), raw_y(2), 'sw', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor','w','MarkerSize',8)
-    plot(c_OBSNodes_x, c_OBSNodes_y, '.k')
-    plot(c_OBSNodesN_x, c_OBSNodesN_y, 'ok')
+    plot3(c_OBSNodes_x, c_OBSNodes_y, c_OBSNodes_z,'.k')
+    plot3(c_OBSNodesN_x, c_OBSNodesN_y, c_OBSNodesN_z, 'ok')
     %plotVehicleTheta(fig, [c_move_x(end) c_move_y(end)], c_move_theta(end), .5, 'k', sensor_radius, '--w')
     
     if length(c_path_x) < 2
         c_path_x = [c_path_x c_path_x];
         c_path_y = [c_path_y c_path_y];
+        c_path_z = [c_path_z c_path_z];
     end
-
     
     plotVehicle(fig, [c_path_x(1) c_path_y(1)], [c_path_x(2) c_path_y(2)], .5, 'k', sensor_radius, '--w')
     
@@ -444,6 +563,8 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     set(gca,'XTickLabel', theXticks)
     set(gca,'YTick',c_theYticks)
     set(gca,'YTickLabel', theYticks)
+    set(gca,'ZTick',c_theZticks)
+    set(gca,'ZTickLabel', theZticks)
     set(gca,'FontSize',20)
     colorbar
     title('Bounded Rational RRTQ^X')

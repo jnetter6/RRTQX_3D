@@ -264,6 +264,48 @@ mutable struct Obstacle
   end
 end
 
+mutable struct SphereObstacle
+
+  startTime::Float64  # obstacle appears this long after the start of the run
+                      # 0 by default
+
+  lifeSpan::Float64   # the lifespan of the obstacle (defaults to Inf)
+  obstacleUnused::Bool # if true, then this obstacle will not be checked
+
+  expired::Bool
+
+
+  senseableObstacle::Bool # true if this obstacle can be sensed by the robot
+                          # i.e., may change state after the robot gets close enough
+                          # is set to false after sensing by robot happens, the
+                          # distance at which sensing occours is set in the part of
+                          # the code pertaining to the robot (and not here)
+                          # default is false
+
+  obstacleUnusedAfterSense::Bool # obstacleUnused is set to this value after the
+                                 # robot senses this obstacle, default is true
+
+
+  position::Array{Float64} # initial position of obstacle
+
+  # data for D-dimensional ball obstacles (kind = 1) and as bound on obstacle
+  # (all kinds)
+  radius::Float64
+  radiusWithoutAug::Float64 # save radius before aug -------- rrtqx
+  # data for an axis aligned D-dimensional hyperrectangle obstacle (kind = 2)
+  span::Array{Float64} # distance away from the center that this obstacle spans
+
+  # constructors:
+  # ball:
+  function SphereObstacle(position::Array{Float64}, radius::Float64)
+    new(0.0, Inf, false, false, false, true, position, radius, radius)
+  end
+
+  function SphereObstacle(pos::Array{Float64})
+    new(0.0, Inf, false, false, false, true, pos[1:3], pos[4])
+  end
+end
+
 
 
 
@@ -271,7 +313,7 @@ end
 ### and is used for sampling new points.
 mutable struct CSpace{T}
   d::Int                          # dimensions
-  obstacles::List{Obstacle}       # a list of obstacles
+  obstacles::List{SphereObstacle}       # a list of obstacles
   # augObs::List{Obstacle}          # a list of augmented obstacles for visualization ----- rrtqx
   obsDelta::Float64               # the granularity of obstacle checks on edges
   lowerBounds::Array{Float64}     # 1XD array containing the lower bounds
@@ -304,7 +346,7 @@ mutable struct CSpace{T}
   startTimeNs::UInt64             # time this started
   elapsedTime::Float64            # elapsed time since start (where time spent saving
                                   # experimental data has been removed)
-  obstaclesToRemove::Obstacle     # an obstacle to remove
+  obstaclesToRemove::SphereObstacle     # an obstacle to remove
 
   robotRadius::Float64            # robot radius
   robotVelocity::Float64          # robot velocity (used for dubins w/o time)
@@ -313,7 +355,7 @@ mutable struct CSpace{T}
   dubinsMaxVelocity::Float64     # max velocity of dubins car (for dubins + time)
 
 
-  sampleStack::JList{Array{Float64,2}} # points to sample in the future
+  sampleStack::JList{Array{Float64,3}} # points to sample in the future
 
   hypervolume::Float64            # hypervolume of space
 
@@ -339,7 +381,7 @@ mutable struct CSpace{T}
   # constructors
 
   function CSpace{T}(D::Int, ObsDelta, L, U, S, G) where {T}
-    O = List{Obstacle}()
+    O = List{SphereObstacle}()
     # aO = List{Obstacle}() ------ rrtqx
     CS = new{T}(D, O, ObsDelta, L, U, U-L, S, G, false, false)
     # CS = new{T}(D, O, ObsDelta, L, U, U-L, S, G, false, false)
@@ -410,10 +452,10 @@ end
 # Although some of the fields are used primarily for simulation of robot movement,
 # currentMoveInvalid is important for the algorithm in general.
 mutable struct RobotData{T}
-  robotPose::Array{Float64,2}       # this is where the robot is (i.e., where it was
+  robotPose::Array{Float64}       # this is where the robot is (i.e., where it was
                                     # at the end of the last control loop)
 
-  nextRobotPose::Array{Float64,2}   # this is where the robot will be at the end
+  nextRobotPose::Array{Float64}   # this is where the robot will be at the end
                                     # of the current control loop
 
   nextMoveTarget::T                 # this is the node at the root-end of the edge
@@ -429,12 +471,12 @@ mutable struct RobotData{T}
   currentMoveInvalid::Bool          # this gets set to true if nextMoveTarget
                                     # has become invalid due to dynamic obstacles
 
-  robotMovePath::Array{Float64,2}   # this holds the path the robot has followed
+  robotMovePath::Array{Float64}   # this holds the path the robot has followed
                                     # from the start of movement up through robotPose
 
   numRobotMovePoints::Int64       # the number of points in robotMovePath
 
-  robotLocalPath::Array{Float64,2}  # this holds the path between robotPose and
+  robotLocalPath::Array{Float64}  # this holds the path between robotPose and
                                     # nextRobotPose (not including the former)
 
   numLocalMovePoints::Int64       # the number of points in robotLocalPath
@@ -459,7 +501,7 @@ mutable struct RobotData{T}
   distAlongRobotEdgeForPlotting::Float64
   timeAlongRobotEdgeForPlotting::Float64
 
-  function RobotData{T}(rP::Array{Float64,2}, nMT::T, maxPathNodes::Int) where {T}
+  function RobotData{T}(rP::Array{Float64}, nMT::T, maxPathNodes::Int) where {T}
 
     R = new{T}()
 

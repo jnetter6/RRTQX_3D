@@ -58,7 +58,7 @@ KDdist(x::Array,y::Array) = euclidianDist(x,y)
 ## of time when determining if a move is possible given robot max speed).
 #
 # use the following version of Wdist for Euclidian space and Dubbin's space
-Wdist(x::Array,y::Array) = euclidianDist(x[1:2],y[1:2])
+Wdist(x::Array,y::Array) = euclidianDist(x[1:3],y[1:3])
 
 
 
@@ -96,7 +96,7 @@ function validMove(S::TS, edge::SimpleEdge{T}) where {T, TS}
     # note that planning happens in reverse time, i.e., time = 0 is at the root
     # of the search tree, and thus the time of startNode must be greater than
     # the time of the end node.
-    return (edge.Wdist <= (edge.startNode.position[3] - edge.endNode.position[3])*S.robotVelocity)
+    return (edge.Wdist <= (edge.startNode.position[4] - edge.endNode.position[4])*S.robotVelocity)
   end
 
   # if space does not have time then we assume that the move is always valid
@@ -208,5 +208,5 @@ end
 #
 ## SimpleEdge version
 explicitEdgeCheck(S::CSpace{T}, edge::SimpleEdge,
-obstacle::OT) where {T, OT} = explicitEdgeCheck2D(obstacle,
+obstacle::OT) where {T, OT} = explicitEdgeCheck3D(obstacle,
 edge.startNode.position, edge.endNode.position, S.robotRadius)
