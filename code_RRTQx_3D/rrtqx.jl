@@ -456,6 +456,23 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
           end
         end
       end
+      if (i != 2)
+        if (Wdist(R[2].robotPose, currPos[i]) < robotSensorRange)
+          #if (level[i] == 0)
+            addObsToCSpace(S[2], currObs)
+          #end
+          if (Wdist(R[2].robotPose, nextPos[i]) > 1.5)
+            #if (level[i] == 0)
+              addObsToCSpace(S[2], nextObs)
+            #end
+          end
+          if (Wdist(R[2].robotPose, nextPos2[i]) > 1.5)
+            #if (level[i] == 0)
+              addObsToCSpace(S[2], nextObs2)
+            #end
+          end
+        end
+      end
     end
     end
     # remove obstacles at the required time
@@ -627,7 +644,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       if (i > 1)
         if (actualPrevPos[i] != currPos[i])
           playerAgentDist = sqrt((prevPos[i][1][1] - prevPos[1][1][1])^2 + (prevPos[i][1][2] - prevPos[1][1][2])^2 + (prevPos[i][1][3] - prevPos[1][1][3])^2)
-          prevPos[i][1] = [(prevPos[i][1][1] + (0.02*rand(Float64) - .01)*playerAgentDist), (prevPos[i][1][2] + (0.02*rand(Float64) - .01)*playerAgentDist), (prevPos[i][1][3] + (0.02*rand(Float64) - .01)*playerAgentDist)]
+          prevPos[i][1] = [(prevPos[i][1][1] + (0.01*rand(Float64) - .005)*playerAgentDist), (prevPos[i][1][2] + (0.01*rand(Float64) - .005)*playerAgentDist), (prevPos[i][1][3] + (0.01*rand(Float64) - .005)*playerAgentDist)]
         end
       end
 
