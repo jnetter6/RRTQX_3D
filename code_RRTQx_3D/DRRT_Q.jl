@@ -66,9 +66,51 @@ end
 function saveBVPs(data, fileName)
   fptr = open(fileName, "w")
   for i = 1:size(data,1)
+    #writedlm(fptr, [data[i][1] data[i][2] data[i][3] data[i][4]], ',')
+    writedlm(fptr, [data[i][1] data[i][2] data[i][3]], ',')
+  end
+  close(fptr)
+end
+
+function saveBVPEnds(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1] data[i][2] data[i][3]], ',')
+  end
+  close(fptr)
+end
+
+function saveBVPDists(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
     writedlm(fptr, [data[i][1] data[i][2] data[i][3] data[i][4]], ',')
   end
   close(fptr)
+end
+
+function saveMoveGoals(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1] data[i][2] data[i][3]], ',')
+  end
+  close(fptr)
+end
+
+function findClosestObs(BVPEnds, staticObs)
+  dists = []
+  for i = 1:size(BVPEnds,1)
+    minDistance = -1.0
+    radius = 0.0
+    for j = 1:size(staticObs,1)
+      dist = sqrt((BVPEnds[i][1] - staticObs[j][1][1])^2 + (BVPEnds[i][2] - staticObs[j][1][2])^2 + (BVPEnds[i][3] - staticObs[j][1][3])^2)
+      if((dist < minDistance) || (minDistance == -1.0))
+        minDistance = dist
+        radius = staticObs[j][2]
+      end
+    end
+    push!(dists, [BVPEnds[i] (minDistance - radius)])
+  end
+  return dists
 end
 
 # prints the length of the goal's rrtLMC
@@ -846,7 +888,7 @@ function readDiscoverable3DObstaclesFromfile(S::CSpace, filename, obsMult)
       else
         error("unknown behavoiur type")
       end
-      ob.lifeSpan = 100.0
+      ob.lifeSpan = 300.0
       addObsToCSpace(S, ob)
     end
 

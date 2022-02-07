@@ -1,12 +1,12 @@
 function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_time::Float64,
   delta::Float64, ballConstant::Float64, changeThresh::Float64,
-  searchType::String, MoveRobotFlag::Bool, saveVideoData::Bool,
+  searchType::String, MoveRobotFlag::Bool, saveVideoData::Bool, obstacleFile::String,
   statsArgs...) where {TS}
 
   T = RRTNode{Float64}
 
   # NOTE THIS IS HARD CODED HERE (SHOULD PROBABLY MAKE INPUT ARGUMENT)
-  robotSensorRange = 20 # 20 # used for "sensing" obstacles
+  robotSensorRange = 10 # 20 # used for "sensing" obstacles
 
   if length(statsArgs) >= 2
 	dataFileName = statsArgs[2]
@@ -35,6 +35,27 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   # to be used for all algorithms. Note about RRTx: I decided to forgoe RRT*+
   # and focus only on #+ sice the latter will likely be more useful than the
   # former in practice
+
+  staticObs = []
+  #obstacleFile = "environments/building.txt" # Dynamic_5: ACC 20; Static_5: small envir;
+  a = open(obstacleFile, "r")
+
+  # get the number of polygons
+  P = parse(Int, readline(a))
+
+  for p = 1:P
+    # get the numer of point in this polygon
+
+    centerT = Array{Float64}(undef, 3)
+    centerT[:] = str2array(readline(a))
+    center = [centerT[1] centerT[2] centerT[3]]
+
+    radius = parse(Float64, readline(a))
+
+    obsBehavourType = parse(Int, readline(a))
+    push!(staticObs, [center, radius])
+  end
+  close(a)
 
   if searchType == "RRTx"
     Q = []
@@ -92,6 +113,12 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
                     # region we care about
 
     S[i].moveGoal.isMoveGoal = true
+  end
+
+  moveGoals = []
+  for i = 1:N
+    push!(moveGoals, [])
+    push!(moveGoals[i], S[i].moveGoal.position)
   end
 
   # paramiters that have to do with the robot path following simulation
@@ -223,10 +250,10 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   prevPosAvg = []
   for i = 1:N
     push!(currPos, R[i].robotPose)
-    push!(prevPos, Array{Array{Float64}}(undef, 8))
-    push!(prevPosAvg, Array{Array{Float64}}(undef, 4))
+    push!(prevPos, Array{Array{Float64}}(undef, 10))
+    push!(prevPosAvg, Array{Array{Float64}}(undef, 5))
     push!(actualPrevPos, [0., 0., 0.])
-    for j = 1:8
+    for j = 1:10
       prevPos[i][j] = currPos[i]
     end
     for j = 1:4
@@ -301,21 +328,22 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
         BVPJustChanged[i] = false
         whichBVP[i] += 1
         push!(maxKDs[i], 0.0)
-        kdAndLV = sim_TNNLS_B_CT_Local_Max(BVPEnds[i][size(BVPEnds[i])[1] - 1][:], BVPEnds[i][size(BVPEnds[i])[1]][:], lastVel[i])
+        #kdAndLV = sim_TNNLS_B_CT_Local_Max(BVPEnds[i][size(BVPEnds[i])[1] - 1][:], BVPEnds[i][size(BVPEnds[i])[1]][:], lastVel[i])
         len = dist(BVPEnds[i][size(BVPEnds[i])[1] - 1][:], BVPEnds[i][size(BVPEnds[i])[1]][:])
-        lastVel[i] = kdAndLV[2]
+        #lastVel[i] = kdAndLV[2]
         println("BVP Change!")
         println(i)
         println(vCounter[i])
         #println(maxKDs[i])
         #println(length(maxKDs[i]))
         #println(whichBVP[i])
-        if ((maxKDs[i][size(maxKDs[i])[1] - 1]) > (kdAndLV[1] + .1))
-          level[i] = 1
-          push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 1, i))
-        else
-          push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 0, i))
-        end
+        push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), i))
+        #if ((maxKDs[i][size(maxKDs[i])[1] - 1]) > (kdAndLV[1] + .1))
+        #  level[i] = 1
+        #  push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 1, i))
+        #else
+        #  push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 0, i))
+        #end
       end
     end
 
@@ -400,8 +428,8 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       
       #nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPos[i][5][3]))]
       #nextPos2[i] = [(currPos[i][1] + 4*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 4*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 4*(currPos[i][3]-prevPos[i][5][3]))]
-      nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPosAvg[i][3][3]))]
-      nextPos2[i] = [(currPos[i][1] + 4*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 4*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 4*(currPos[i][3]-prevPosAvg[i][3][3]))]
+      nextPos[i] = [(currPos[i][1] + 1.5*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 1.5*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 1.5*(currPos[i][3]-prevPosAvg[i][3][3]))]
+      nextPos2[i] = [(currPos[i][1] + 3*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 3*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 3*(currPos[i][3]-prevPosAvg[i][3][3]))]
 
       #nextObsPos[i][1,:] = [(nextPos[i][1] - 1.4), (nextPos[i][2] - 1.4)]
       #nextObsPos[i][2,:] = [(nextPos[i][1] + 1.4), (nextPos[i][2] - 1.4)]
@@ -417,15 +445,15 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       nextObs2 = SphereObstacle(nextPos2[i], (3.0))
     
       currObs.startTime = S[1].elapsedTime
-      currObs.lifeSpan = slice_time*5
+      currObs.lifeSpan = slice_time*3
       currObs.obstacleUnused = false
 
       nextObs.startTime = S[1].elapsedTime
-      nextObs.lifeSpan = slice_time*5
+      nextObs.lifeSpan = slice_time*3
       nextObs.obstacleUnused = false
 
       nextObs2.startTime = S[1].elapsedTime
-      nextObs2.lifeSpan = slice_time*5
+      nextObs2.lifeSpan = slice_time*3
       nextObs2.obstacleUnused = false
 
       #if (i != 2)
@@ -635,7 +663,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
         println("slice $(sliceCounter) --- $(truncElapsedTime) -------- $(S[i].moveGoal.rrtTreeCost) $(S[i].moveGoal.rrtLMC) ----")
       end
 
-      for j = 8:-1:2
+      for j = 10:-1:2
         prevPos[i][j] = prevPos[i][j-1]
       end
       currPos[i] = R[i].robotPose
@@ -644,12 +672,13 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       if (i > 1)
         if (actualPrevPos[i] != currPos[i])
           playerAgentDist = sqrt((prevPos[i][1][1] - prevPos[1][1][1])^2 + (prevPos[i][1][2] - prevPos[1][1][2])^2 + (prevPos[i][1][3] - prevPos[1][1][3])^2)
+          #println(playerAgentDist)
           prevPos[i][1] = [(prevPos[i][1][1] + (0.01*rand(Float64) - .005)*playerAgentDist), (prevPos[i][1][2] + (0.01*rand(Float64) - .005)*playerAgentDist), (prevPos[i][1][3] + (0.01*rand(Float64) - .005)*playerAgentDist)]
         end
       end
 
-      for j = 4:-1:1
-        prevPosAvg[i][j] = [(((prevPos[i][(2*j)][1]) + (prevPos[i][(2*j-1)][1]))/2),(((prevPos[i][(2*j)][2]) + (prevPos[i][(2*j-1)][2]))/2), (((prevPos[i][(2*j)][1]) + (prevPos[i][(2*j-1)][1]))/2)]
+      for j = 5:-1:1
+        prevPosAvg[i][j] = [(((prevPos[i][(2*j)][1]) + (prevPos[i][(2*j-1)][1]))/2),(((prevPos[i][(2*j)][2]) + (prevPos[i][(2*j-1)][2]))/2), (((prevPos[i][(2*j)][3]) + (prevPos[i][(2*j-1)][3]))/2)]
       end
 
       actualPrevPos[i] = currPos[i]
@@ -662,13 +691,13 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
         #noisyCurrVec2 = [(prevPos[i][2][1] + (0.02*rand(Float64) - .01)*playerAgentDist), (prevPos[i][2][2] + (0.02*rand(Float64) - .01)*playerAgentDist), (prevPos[i][2][3] + (0.02*rand(Float64) - .01)*playerAgentDist)]
         #pastVec = [(prevPos[i][4][1] - prevPos[i][5][1]), (prevPos[i][4][2] - prevPos[i][5][2]), (prevPos[i][4][3] - prevPos[i][5][3])]
         #currVec = [(prevPos[i][1][1] - prevPos[i][2][1]), (prevPos[i][1][2] - prevPos[i][2][2]), (prevPos[i][1][3] - prevPos[i][2][3])]
-        pastVec = [(prevPosAvg[i][3][1] - prevPosAvg[i][4][1]), (prevPosAvg[i][3][2] - prevPosAvg[i][4][2]), (prevPosAvg[i][3][3] - prevPosAvg[i][4][3])]
+        pastVec = [(prevPosAvg[i][4][1] - prevPosAvg[i][5][1]), (prevPosAvg[i][4][2] - prevPosAvg[i][5][2]), (prevPosAvg[i][4][3] - prevPosAvg[i][5][3])]
         currVec = [(prevPosAvg[i][1][1] - prevPosAvg[i][2][1]), (prevPosAvg[i][1][2] - prevPosAvg[i][2][2]), (prevPosAvg[i][1][3] - prevPosAvg[i][2][3])]
         #pastVec = [(noisyPastVec1[1] - noisyPastVec2[1]), (noisyPastVec1[2] - noisyPastVec2[2]), (noisyPastVec1[3] - noisyPastVec2[3])]
         #currVec = [(noisyCurrVec1[1] - noisyCurrVec2[1]), (noisyCurrVec1[2] - noisyCurrVec2[2]), (noisyCurrVec1[3] - noisyCurrVec2[3])]
         angle = acos(((pastVec[1]*currVec[1]) + (pastVec[2]*currVec[2]) + (pastVec[3]*currVec[3]))/(sqrt(pastVec[1]^2 + pastVec[2]^2 + pastVec[3]^2)*sqrt(currVec[1]^2 + currVec[2]^2 + currVec[3]^2)))
         angle = angle*(360/(2*pi))
-        if ((abs(angle) > 15) && (NextBVPCheck[i] == true))
+        if ((abs(angle) > 18) && (NextBVPCheck[i] == true))
           BVPJustChanged[i] = true
           NextBVPCheck[i] = false
           savedAngle[i] = angle
@@ -719,6 +748,10 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
           println("done (not moving robot)")
           break
         end
+      end
+
+      if (last(moveGoals[i]) != S[i].moveGoal.position)
+        push!(moveGoals[i], S[i].moveGoal.position)
       end
 
       if searchType == "RRT#" || searchType == "RRTx"
@@ -861,12 +894,15 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     #saveVels(pastVels[i], "temp/AApastVels_$(i).txt")
     #saveErrors(distAndVelError[i], "temp/AAErrors_$(i).txt")
     saveErrors(angAndTimeSince[i], "temp/angles_$(i).txt")
-
+    distances = findClosestObs(BVPEnds[i], staticObs)
+    saveBVPEnds(BVPEnds[i], "temp/BVPEnds_$(i).txt")
+    saveBVPDists(distances, "temp/BVPDistFromStaticObs_$(i).txt")
+    saveMoveGoals(moveGoals[i], "temp/MoveGoals_$(i).txt")
   end
   saveBVPs(allBVPs, "temp/BVPs.txt")
   #println(BVPEnds[1])
   #println(maxKDs)
-  println(level)
+  #println(level)
   #println(pastVels[1])
   return (S[1].NormEsqvec, S[1].TrigCondvec)
   # saveData(tr, "temp/Trig.txt")

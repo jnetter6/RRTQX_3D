@@ -161,7 +161,7 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
         obs_r = [];
     end
     
-    MoveData = load([dir 'robotMovePath_1_' num2str(file_ctr) '.txt']);
+    MoveData = load([dir 'robotMovePath_3_' num2str(file_ctr) '.txt']);
     move_x = MoveData(:,1);
     move_y = MoveData(:,2);
     move_z = MoveData(:,3);
@@ -174,17 +174,17 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     
     if (file_ctr > start_move_at_ctr)
         %Uncomment with 4
-        %MoveData2 = load([dir 'robotMovePath_4_' num2str(file_ctr) '.txt']);
-        %move_x2 = MoveData2(:,1);
-        %move_y2 = MoveData2(:,2);
-        %move_z2 = MoveData2(:,3);
+        MoveData2 = load([dir 'robotMovePath_2_' num2str(file_ctr) '.txt']);
+        move_x2 = MoveData2(:,1);
+        move_y2 = MoveData2(:,2);
+        move_z2 = MoveData2(:,3);
     
-        MoveData3 = load([dir 'robotMovePath_3_' num2str(file_ctr) '.txt']);
+        MoveData3 = load([dir 'robotMovePath_1_' num2str(file_ctr) '.txt']);
         move_x3 = MoveData3(:,1);
         move_y3 = MoveData3(:,2);
         move_z3 = MoveData3(:,3);
     
-        MoveData4 = load([dir 'robotMovePath_2_' num2str(file_ctr) '.txt']);
+        MoveData4 = load([dir 'robotMovePath_4_' num2str(file_ctr) '.txt']);
         move_x4 = MoveData4(:,1);
         move_y4 = MoveData4(:,2);
         move_z4 = MoveData4(:,3);
@@ -470,7 +470,7 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     %colormap(tempcolormap)
     %contourf(Zmin,countorLevels, 'EdgeColor', 'none')
     hold on
-    view(45,45)
+    view(0,0)
     %plot3(c_x, c_y, c_z, 'Color',[0.3,0.3,0.3],'LineWidth',.5)
     plot3(c_node_x, c_node_y, c_node_z, '.', 'Color',[0.3,0.3,0.3],'MarkerSize',.5)
     plot3(c_move_x, c_move_y, c_move_z, 'k', 'LineWidth',3)
