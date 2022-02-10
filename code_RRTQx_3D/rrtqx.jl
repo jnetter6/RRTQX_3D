@@ -116,9 +116,12 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   end
 
   moveGoals = []
+  currPosAtMoveGoals = []
   for i = 1:N
     push!(moveGoals, [])
+    push!(currPosAtMoveGoals, [])
     push!(moveGoals[i], S[i].moveGoal.position)
+    push!(currPosAtMoveGoals[i], S[i].start)
   end
 
   # paramiters that have to do with the robot path following simulation
@@ -752,6 +755,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
 
       if (last(moveGoals[i]) != S[i].moveGoal.position)
         push!(moveGoals[i], S[i].moveGoal.position)
+        push!(currPosAtMoveGoals[i], currPos[i])
       end
 
       if searchType == "RRT#" || searchType == "RRTx"
@@ -898,6 +902,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     saveBVPEnds(BVPEnds[i], "temp/BVPEnds_$(i).txt")
     saveBVPDists(distances, "temp/BVPDistFromStaticObs_$(i).txt")
     saveMoveGoals(moveGoals[i], "temp/MoveGoals_$(i).txt")
+    saveMoveGoals(currPosAtMoveGoals[i], "temp/ActualPosAtMoveGoals_$(i).txt")
   end
   saveBVPs(allBVPs, "temp/BVPs.txt")
   #println(BVPEnds[1])
