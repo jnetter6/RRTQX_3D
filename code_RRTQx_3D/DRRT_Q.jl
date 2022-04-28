@@ -113,6 +113,26 @@ function findClosestObs(BVPEnds, staticObs)
   return dists
 end
 
+function findClosestObsToLineSegment(BVPEnds, staticObs)
+  dists = []
+  for i = 2:size(BVPEnds,1)
+    minDistance = -1.0
+    radius = 0.0
+    len = sqrt((BVPEnds[i][1] - BVPEnds[i-1][1])^2 + (BVPEnds[i][2] - BVPEnds[i-1][2])^2 + (BVPEnds[i][3] - BVPEnds[i-1][3])^2)
+    direction = [(BVPEnds[i][1] - BVPEnds[i-1][1])/len*10 (BVPEnds[i][2] - BVPEnds[i-1][2])/len*10 (BVPEnds[i][2] - BVPEnds[i-1][2])/len*10]
+    for j = 1:size(staticObs,1)
+      dist = distancePointToSegment(staticObs[j][1], BVPEnds[i], direction)
+      dist = sqrt((BVPEnds[i][1] - staticObs[j][1][1])^2 + (BVPEnds[i][2] - staticObs[j][1][2])^2 + (BVPEnds[i][3] - staticObs[j][1][3])^2)
+      if((dist < minDistance) || (minDistance == -1.0))
+        minDistance = dist
+        radius = staticObs[j][2]
+      end
+    end
+    push!(dists, [BVPEnds[i] (minDistance - radius)])
+  end
+  return dists
+end
+
 # prints the length of the goal's rrtLMC
 function printPathLengths(goalNode::T) where {T}
   print("\n goal.rrtLMC: $(goalNode.rrtLMC) goal.rrtTreeCost: $(goalNode.rrtLMC) \n")

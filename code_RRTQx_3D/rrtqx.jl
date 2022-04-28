@@ -898,7 +898,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     #saveVels(pastVels[i], "temp/AApastVels_$(i).txt")
     #saveErrors(distAndVelError[i], "temp/AAErrors_$(i).txt")
     saveErrors(angAndTimeSince[i], "BVPData/angles_$(i).txt")
-    distances = findClosestObs(BVPEnds[i], staticObs)
+    distances = findClosestObsToLineSegment(BVPEnds[i], staticObs)
     saveBVPEnds(BVPEnds[i], "BVPData/BVPEnds_$(i).txt")
     saveBVPDists(distances, "BVPData/BVPDistFromStaticObs_$(i).txt")
     saveMoveGoals(moveGoals[i], "BVPData/MoveGoals_$(i).txt")
