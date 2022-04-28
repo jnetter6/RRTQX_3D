@@ -700,7 +700,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
         #currVec = [(noisyCurrVec1[1] - noisyCurrVec2[1]), (noisyCurrVec1[2] - noisyCurrVec2[2]), (noisyCurrVec1[3] - noisyCurrVec2[3])]
         angle = acos(((pastVec[1]*currVec[1]) + (pastVec[2]*currVec[2]) + (pastVec[3]*currVec[3]))/(sqrt(pastVec[1]^2 + pastVec[2]^2 + pastVec[3]^2)*sqrt(currVec[1]^2 + currVec[2]^2 + currVec[3]^2)))
         angle = angle*(360/(2*pi))
-        if ((abs(angle) > 18) && (NextBVPCheck[i] == true))
+        if ((abs(angle) > 16) && (NextBVPCheck[i] == true))
           BVPJustChanged[i] = true
           NextBVPCheck[i] = false
           savedAngle[i] = angle
@@ -897,14 +897,14 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   for i = 1:N
     #saveVels(pastVels[i], "temp/AApastVels_$(i).txt")
     #saveErrors(distAndVelError[i], "temp/AAErrors_$(i).txt")
-    saveErrors(angAndTimeSince[i], "temp/angles_$(i).txt")
+    saveErrors(angAndTimeSince[i], "BVPData/angles_$(i).txt")
     distances = findClosestObs(BVPEnds[i], staticObs)
-    saveBVPEnds(BVPEnds[i], "temp/BVPEnds_$(i).txt")
-    saveBVPDists(distances, "temp/BVPDistFromStaticObs_$(i).txt")
-    saveMoveGoals(moveGoals[i], "temp/MoveGoals_$(i).txt")
-    saveMoveGoals(currPosAtMoveGoals[i], "temp/ActualPosAtMoveGoals_$(i).txt")
+    saveBVPEnds(BVPEnds[i], "BVPData/BVPEnds_$(i).txt")
+    saveBVPDists(distances, "BVPData/BVPDistFromStaticObs_$(i).txt")
+    saveMoveGoals(moveGoals[i], "BVPData/MoveGoals_$(i).txt")
+    saveMoveGoals(currPosAtMoveGoals[i], "BVPData/ActualPosAtMoveGoals_$(i).txt")
   end
-  saveBVPs(allBVPs, "temp/BVPs.txt")
+  saveBVPs(allBVPs, "BVPData/BVPs.txt")
   #println(BVPEnds[1])
   #println(maxKDs)
   #println(level)
