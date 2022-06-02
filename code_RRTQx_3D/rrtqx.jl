@@ -312,6 +312,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
 
   while true
     for i = 1:N
+      #Quick check to make sure its worth measuring BVPs
       if (NextBVPCheck[i] == false)
         if (BVPCounter[i] > 5)
           BVPCounter[i] = 0
@@ -320,6 +321,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
           BVPCounter[i] += 1
         end
       end
+      #We save the most recent BVP angle and how long since the one before
       if (BVPJustChanged[i] == true)
         if (i == 1)
           push!(angAndTimeSince[i], [savedAngle[i], timeSinceLastSave[i], 1])
@@ -337,10 +339,8 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
         println("BVP Change!")
         println(i)
         println(vCounter[i])
-        #println(maxKDs[i])
-        #println(length(maxKDs[i]))
-        #println(whichBVP[i])
         push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), i))
+        #Saving level of rationality of a BVP
         #if ((maxKDs[i][size(maxKDs[i])[1] - 1]) > (kdAndLV[1] + .1))
         #  level[i] = 1
         #  push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 1, i))
@@ -424,25 +424,12 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     ### beginning of remove obstacle
     if vCounter[1] > 30
     for i = 1:N
-      #currObsPos[i][1] = [(currPos[i][1] - 1.0), (currPos[i][2] - 1.0)]
-      #currObsPos[i][2] = [(currPos[i][1] + 1.0), (currPos[i][2] - 1.0)]
-      #currObsPos[i][3] = [(currPos[i][1] + 1.0), (currPos[i][2] + 1.0)]
-      #currObsPos[i][4] = [(currPos[i][1] - 1.0), (currPos[i][2] + 1.0)]
-      
+      #Generating 2 obstacles along the estimated path of each agent      
       #nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPos[i][5][3]))]
       #nextPos2[i] = [(currPos[i][1] + 4*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 4*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 4*(currPos[i][3]-prevPos[i][5][3]))]
       nextPos[i] = [(currPos[i][1] + 1.5*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 1.5*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 1.5*(currPos[i][3]-prevPosAvg[i][3][3]))]
       nextPos2[i] = [(currPos[i][1] + 3*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 3*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 3*(currPos[i][3]-prevPosAvg[i][3][3]))]
 
-      #nextObsPos[i][1,:] = [(nextPos[i][1] - 1.4), (nextPos[i][2] - 1.4)]
-      #nextObsPos[i][2,:] = [(nextPos[i][1] + 1.4), (nextPos[i][2] - 1.4)]
-      #nextObsPos[i][3,:] = [(nextPos[i][1] + 1.4), (nextPos[i][2] + 1.4)]
-      #nextObsPos[i][4,:] = [(nextPos[i][1] - 1.4), (nextPos[i][2] + 1.4)]
-
-      #nextObsPos2[i][1,:] = [(nextPos2[i][1] - 1.4), (nextPos2[i][2] - 1.4)]
-      #nextObsPos2[i][2,:] = [(nextPos2[i][1] + 1.4), (nextPos2[i][2] - 1.4)]
-      #nextObsPos2[i][3,:] = [(nextPos2[i][1] + 1.4), (nextPos2[i][2] + 1.4)]
-      #nextObsPos2[i][4,:] = [(nextPos2[i][1] - 1.4), (nextPos2[i][2] + 1.4)]
       currObs = SphereObstacle(currPos[i], (1.5))
       nextObs = SphereObstacle(nextPos[i], (3.0))
       nextObs2 = SphereObstacle(nextPos2[i], (3.0))
@@ -470,6 +457,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       #    end
       #  end
       #end
+      #This could be done through iteration but 1 and 2 were already done so I just continued
       if (i != 1)
         if (Wdist(R[1].robotPose, currPos[i]) < robotSensorRange)
           #if (level[i] == 0)
@@ -500,6 +488,40 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
           if (Wdist(R[2].robotPose, nextPos2[i]) > 1.5)
             #if (level[i] == 0)
               addObsToCSpace(S[2], nextObs2)
+            #end
+          end
+        end
+      end
+      if (i != 3)
+        if (Wdist(R[3].robotPose, currPos[i]) < robotSensorRange)
+          #if (level[i] == 0)
+            addObsToCSpace(S[3], currObs)
+          #end
+          if (Wdist(R[3].robotPose, nextPos[i]) > 1.5)
+            #if (level[i] == 0)
+              addObsToCSpace(S[3], nextObs)
+            #end
+          end
+          if (Wdist(R[3].robotPose, nextPos2[i]) > 1.5)
+            #if (level[i] == 0)
+              addObsToCSpace(S[3], nextObs2)
+            #end
+          end
+        end
+      end
+      if (i != 4)
+        if (Wdist(R[4].robotPose, currPos[i]) < robotSensorRange)
+          #if (level[i] == 0)
+            addObsToCSpace(S[4], currObs)
+          #end
+          if (Wdist(R[4].robotPose, nextPos[i]) > 1.5)
+            #if (level[i] == 0)
+              addObsToCSpace(S[4], nextObs)
+            #end
+          end
+          if (Wdist(R[4].robotPose, nextPos2[i]) > 1.5)
+            #if (level[i] == 0)
+              addObsToCSpace(S[4], nextObs2)
             #end
           end
         end
@@ -708,6 +730,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
           timeSinceLastSave[i] = timeSinceLastSave[i] + 1.0
         end
         if (mod(vCounter[i], 5) == 0)
+          #Need to check if we have 2 past vectors (one KINDA past and one MORE past)
           if (gotPrevPrev[i] == false)
             gotPrevPrev[i] = true
             prevPrevVel[i] = currVec
@@ -728,10 +751,6 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
             end
             prevPrevVel[i] = prevVel[i]
             prevVel[i] = currVel[i]
-            #println(pastVels[i])
-            #println(typeof(pastVels[i]))
-            #println(typeof(pastVels[i][1]))
-            #println(pastVels[i][1])
           end
         end
       end
