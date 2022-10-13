@@ -96,6 +96,14 @@ function saveMoveGoals(data, fileName)
   close(fptr)
 end
 
+function saveFullBVPs(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1][1] data[i][1][2] data[i][1][3] data[i][2][1] data[i][2][2] data[i][2][3]], ',')
+  end
+  close(fptr)
+end
+
 function findClosestObs(BVPEnds, staticObs)
   dists = []
   for i = 1:size(BVPEnds,1)

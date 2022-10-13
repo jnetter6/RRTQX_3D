@@ -117,11 +117,14 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
 
   moveGoals = []
   currPosAtMoveGoals = []
+  BVPsAccordingToAgents = []
   for i = 1:N
     push!(moveGoals, [])
     push!(currPosAtMoveGoals, [])
+    push!(BVPsAccordingToAgents, [])
     push!(moveGoals[i], S[i].moveGoal.position)
     push!(currPosAtMoveGoals[i], S[i].start)
+    push!(BVPsAccordingToAgents[i], [S[i].start, S[i].moveGoal.position])
   end
 
   # paramiters that have to do with the robot path following simulation
@@ -775,6 +778,15 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       if (last(moveGoals[i]) != S[i].moveGoal.position)
         push!(moveGoals[i], S[i].moveGoal.position)
         push!(currPosAtMoveGoals[i], currPos[i])
+        #Adding in BVPs to other agents, including some noise
+        for j = 1:N
+          if (j != i)
+            agentDist = dist(currPos[i], currPos[j])
+            noisyPos = [(currPos[i][1] + agentDist*(0.02*rand(Float64) - .01)), (currPos[i][2] + agentDist*(0.02*rand(Float64) - .01)), (currPos[i][3] + agentDist*(0.02*rand(Float64) - .01))]
+            noisyGoal = [(S[i].moveGoal.position[1] + agentDist*(0.02*rand(Float64) - .01)), (S[i].moveGoal.position[2] + agentDist*(0.02*rand(Float64) - .01)), (S[i].moveGoal.position[3] + agentDist*(0.02*rand(Float64) - .01))]
+            push!(BVPsAccordingToAgents[j], [noisyPos, noisyGoal])
+          end
+        end
       end
 
       if searchType == "RRT#" || searchType == "RRTx"
@@ -922,6 +934,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     saveBVPDists(distances, "BVPData/BVPDistFromStaticObs_$(i).txt")
     saveMoveGoals(moveGoals[i], "BVPData/MoveGoals_$(i).txt")
     saveMoveGoals(currPosAtMoveGoals[i], "BVPData/ActualPosAtMoveGoals_$(i).txt")
+    saveFullBVPs(BVPsAccordingToAgents[i], "BVPData/BVPsAccordingTo_$(i).txt")
   end
   saveBVPs(allBVPs, "BVPData/BVPs.txt")
   #println(BVPEnds[1])
