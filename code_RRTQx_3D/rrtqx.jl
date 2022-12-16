@@ -1,4 +1,4 @@
-function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_time::Float64,
+function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_time::Float64, slice_time::Float64,
   delta::Float64, ballConstant::Float64, changeThresh::Float64,
   searchType::String, MoveRobotFlag::Bool, saveVideoData::Bool, obstacleFile::String,
   statsArgs...) where {TS}
@@ -74,6 +74,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
                                               # desire to insert in the future in
                                               # (used when an obstacle is removed
     S[i].delta = delta
+    S[i].replannedPath = false
   end
 
   robotRads = S[1].robotRadius
@@ -118,13 +119,16 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   moveGoals = []
   currPosAtMoveGoals = []
   BVPsAccordingToAgents = []
+  wasPathReplanned = []
   for i = 1:N
     push!(moveGoals, [])
     push!(currPosAtMoveGoals, [])
     push!(BVPsAccordingToAgents, [])
+    push!(wasPathReplanned, [])
     push!(moveGoals[i], S[i].moveGoal.position)
     push!(currPosAtMoveGoals[i], S[i].start)
     push!(BVPsAccordingToAgents[i], [S[i].start, S[i].moveGoal.position])
+    push!(wasPathReplanned[i], false)
   end
 
   # paramiters that have to do with the robot path following simulation
@@ -461,74 +465,93 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       #  end
       #end
       #This could be done through iteration but 1 and 2 were already done so I just continued
-      if (i != 1)
-        if (Wdist(R[1].robotPose, currPos[i]) < robotSensorRange)
-          #if (level[i] == 0)
-            addObsToCSpace(S[1], currObs)
-          #end
-          if (Wdist(R[1].robotPose, nextPos[i]) > 1.5)
+      for lvl1 in lvl1s
+        if (i != lvl1)
+          if (Wdist(R[lvl1].robotPose, currPos[i]) < robotSensorRange)
             #if (level[i] == 0)
-              addObsToCSpace(S[1], nextObs)
+              addObsToCSpace(S[lvl1], currObs)
             #end
-          end
-          if (Wdist(R[1].robotPose, nextPos2[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[1], nextObs2)
-            #end
-          end
+            if (Wdist(R[lvl1].robotPose, nextPos[i]) > 1.5)
+              #if (level[i] == 0)
+                addObsToCSpace(S[lvl1], nextObs)
+              #end
+            end
+            if (Wdist(R[lvl1].robotPose, nextPos2[i]) > 1.5)
+              #if (level[i] == 0)
+                addObsToCSpace(S[lvl1], nextObs2)
+              #end
+            end
+          end 
         end
       end
-      if (i != 2)
-        if (Wdist(R[2].robotPose, currPos[i]) < robotSensorRange)
-          #if (level[i] == 0)
-            addObsToCSpace(S[2], currObs)
-          #end
-          if (Wdist(R[2].robotPose, nextPos[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[2], nextObs)
-            #end
-          end
-          if (Wdist(R[2].robotPose, nextPos2[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[2], nextObs2)
-            #end
-          end
-        end
-      end
-      if (i != 3)
-        if (Wdist(R[3].robotPose, currPos[i]) < robotSensorRange)
-          #if (level[i] == 0)
-            addObsToCSpace(S[3], currObs)
-          #end
-          if (Wdist(R[3].robotPose, nextPos[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[3], nextObs)
-            #end
-          end
-          if (Wdist(R[3].robotPose, nextPos2[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[3], nextObs2)
-            #end
-          end
-        end
-      end
-      if (i != 4)
-        if (Wdist(R[4].robotPose, currPos[i]) < robotSensorRange)
-          #if (level[i] == 0)
-            addObsToCSpace(S[4], currObs)
-          #end
-          if (Wdist(R[4].robotPose, nextPos[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[4], nextObs)
-            #end
-          end
-          if (Wdist(R[4].robotPose, nextPos2[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[4], nextObs2)
-            #end
-          end
-        end
-      end
+      # if (i != 1)
+      #   if (Wdist(R[1].robotPose, currPos[i]) < robotSensorRange)
+      #     #if (level[i] == 0)
+      #       addObsToCSpace(S[1], currObs)
+      #     #end
+      #     if (Wdist(R[1].robotPose, nextPos[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[1], nextObs)
+      #       #end
+      #     end
+      #     if (Wdist(R[1].robotPose, nextPos2[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[1], nextObs2)
+      #       #end
+      #     end
+      #   end
+      # end
+      # if (i != 2)
+      #   if (Wdist(R[2].robotPose, currPos[i]) < robotSensorRange)
+      #     #if (level[i] == 0)
+      #       addObsToCSpace(S[2], currObs)
+      #     #end
+      #     if (Wdist(R[2].robotPose, nextPos[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[2], nextObs)
+      #       #end
+      #     end
+      #     if (Wdist(R[2].robotPose, nextPos2[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[2], nextObs2)
+      #       #end
+      #     end
+      #   end
+      # end
+      # if (i != 3)
+      #   if (Wdist(R[3].robotPose, currPos[i]) < robotSensorRange)
+      #     #if (level[i] == 0)
+      #       addObsToCSpace(S[3], currObs)
+      #     #end
+      #     if (Wdist(R[3].robotPose, nextPos[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[3], nextObs)
+      #       #end
+      #     end
+      #     if (Wdist(R[3].robotPose, nextPos2[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[3], nextObs2)
+      #       #end
+      #     end
+      #   end
+      # end
+      # if (i != 4)
+      #   if (Wdist(R[4].robotPose, currPos[i]) < robotSensorRange)
+      #     #if (level[i] == 0)
+      #       addObsToCSpace(S[4], currObs)
+      #     #end
+      #     if (Wdist(R[4].robotPose, nextPos[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[4], nextObs)
+      #       #end
+      #     end
+      #     if (Wdist(R[4].robotPose, nextPos2[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[4], nextObs2)
+      #       #end
+      #     end
+      #   end
+      # end
     end
     end
     # remove obstacles at the required time
@@ -778,6 +801,8 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       if (last(moveGoals[i]) != S[i].moveGoal.position)
         push!(moveGoals[i], S[i].moveGoal.position)
         push!(currPosAtMoveGoals[i], currPos[i])
+        push!(wasPathReplanned[i], S[i].replannedPath)
+        S[i].replannedPath = false
         #Adding in BVPs to other agents, including some noise
         for j = 1:N
           if (j != i)
@@ -933,6 +958,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     saveBVPEnds(BVPEnds[i], "BVPData/BVPEnds_$(i).txt")
     saveBVPDists(distances, "BVPData/BVPDistFromStaticObs_$(i).txt")
     saveMoveGoals(moveGoals[i], "BVPData/MoveGoals_$(i).txt")
+    saveBools(wasPathReplanned[i], "BVPData/ReplannedFlags_$(i).txt")
     saveMoveGoals(currPosAtMoveGoals[i], "BVPData/ActualPosAtMoveGoals_$(i).txt")
     saveFullBVPs(BVPsAccordingToAgents[i], "BVPData/BVPsAccordingTo_$(i).txt")
   end

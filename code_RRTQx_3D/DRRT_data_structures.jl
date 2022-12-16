@@ -369,6 +369,8 @@ mutable struct CSpace{T}
                                   # are ignored for warm up time)
   inWarmupTime::Bool              # true if we are in the warmup time
 
+  replannedPath::Bool             # to track if the path was just replanned
+
   numCoveredLocal::Int64          # for Q visualization
 	numLocal::Int64
   numEsqTrigLocal::Int64

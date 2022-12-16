@@ -96,6 +96,18 @@ function saveMoveGoals(data, fileName)
   close(fptr)
 end
 
+function saveBools(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    if(data[i][1] == true)
+      writedlm(fptr, [1.0], ',')
+    else
+      writedlm(fptr, [0.0], ',')
+    end
+  end
+  close(fptr)
+end
+
 function saveFullBVPs(data, fileName)
   fptr = open(fileName, "w")
   for i = 1:size(data,1)
@@ -2891,6 +2903,7 @@ function findNewTarget(S::TS, KD::TKD, R::RobotData, hyberBallRad::Float64) wher
   R.robotEdgeForPlottingUsed = false
   R.distAlongRobotEdgeForPlotting = 0.0
   R.timeAlongRobotEdgeForPlotting = 0.0
+  S.replannedPath = true
 
   println("move target has become invalid")
   searchBallRad = max(hyberBallRad, dist(R.robotPose, R.nextMoveTarget.position))

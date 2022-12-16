@@ -1123,7 +1123,7 @@ function moveRobot_Q(S, Q, KD, slice_time, root, hyberBallRad, R, localPoseAndKd
 
 	if R.currentMoveInvalid
 	  # save covered Esq & Trig
-  	  S.NormEsqvec = [S.NormEsqvec; localNormEsq[1:Int(ceil(S.numEsqTrigLocal*S.numCoveredLocal/S.numLocal))]]
+  	  S.NormEsqvec = [S.NormEsqvec; localNormEsq[1:2]]
 	  S.TrigCondvec = [S.TrigCondvec; localTrigCond[1:Int(ceil(S.numEsqTrigLocal*S.numCoveredLocal/S.numLocal))]]
 	  # println("localNormEsq = $(localNormEsq[1:Int(ceil(S.numEsqTrigLocal*S.numCoveredLocal/S.numLocal))])")
 	  # println("localTrigCond = $(localTrigCond[1:Int(ceil(S.numEsqTrigLocal*S.numCoveredLocal/S.numLocal))])")
