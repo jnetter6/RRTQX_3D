@@ -47,6 +47,14 @@ function saveData(data, fileName)
   close(fptr)
 end
 
+function saveList(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1]], ',')
+  end
+  close(fptr)
+end
+
 function saveVels(data, fileName)
   fptr = open(fileName, "w")
   for i = 1:size(data,1)

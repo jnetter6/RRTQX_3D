@@ -37,17 +37,17 @@ function sim_RRTQX()
   envRad = 23 # 50.0          # environment spans -envRad to envRad in each dimension
   robotRad = 0.5
   # robotSensorRange = 0.4
-  start = [-20.5 -14.0 -12.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  goal = [20.5 -14.0 -12.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  start2 = [20.6 14.0 -11.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  goal2 = [-20.7 14.0 -13.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  start3 = [-20.0 14.0 -12.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
-  goal3 = [20.0 14.0 -12.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  start4 = [20.0 -14.0 -12.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
-  goal4 = [-20.0 -14.0 -12.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start = [8.9 -2.5 -12.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  goal = [-8.0 1.5 -13.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
+  start2 = [-9.5 -1.0 -12.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
+  goal2 = [8.3 1.0 -13.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start3 = [2.0 7.0 -12.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
+  goal3 = [-1.0 -8.5 -12.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start4 = [1.5 -7.0 -12.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
+  goal4 = [-2.5 8.5 -12.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
 
 
-  lvl1s = [2 3]
+  lvl1s = [1]
 
 
   # start = [0.0 -8.]
@@ -121,7 +121,7 @@ function sim_RRTQX()
   push!(T, C4)
   N = (size(T)[1])
 
-  multirrtqx(T, N, lvl1s, total_time, slice_time, 10.0, 100.0, changeThresh, algorithmName, MoveRobot, saveVideoData, obstacleFile, saveTree, dataFile)
+  multirrtqx(T, N, lvl1s, total_time, slice_time, 8.0, 80.0, changeThresh, algorithmName, MoveRobot, saveVideoData, obstacleFile, saveTree, dataFile)
   #for i = 1:30
   #  C.lastVelocity = [0.0; -1.0; 0.0]
   #  localTemp = sim_TNNLS_B_CT_Local_Max([0.0; 0.0; 0.0], [(i/3); (i/3); (i/3)], C.lastVelocity)
