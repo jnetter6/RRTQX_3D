@@ -3857,9 +3857,9 @@ function saveOriginalObstacleLocations_Q(obstacles::List{SphereObstacle}, fileNa
     end
 
     for i = 1:size(ob.polygonWithoutAug,1)
-      writedlm(fptr, reshape(ob.polygonWithoutAug[i,:], 1, length(ob.polygonWithoutAug[i,:])), ',')
+      writedlm(fptr, reshape(ob.polygonWithoutAug[i,:], 1, 3.25), ',')
     end
-    writedlm(fptr, reshape(ob.polygonWithoutAug[1,:], 1, length(ob.polygonWithoutAug[1, :])), ',')
+    writedlm(fptr, reshape(ob.polygonWithoutAug[1,:], 1, 3.25), ',')
     writedlm(fptr, [NaN NaN], ',')
     listNode = listNode.child
   end
