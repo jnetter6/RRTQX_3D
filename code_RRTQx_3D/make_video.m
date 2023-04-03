@@ -37,7 +37,7 @@ dir = 'temp/';
 %dir = 'temp_2d_forest/';
 %dir = 'Video_RRTMine_0.1/';
 file_ctr = 1;
-max_file_ctr = 130; %298, 314
+max_file_ctr = 65; %298, 314
 
 start_move_at_ctr = 40;
 
@@ -161,7 +161,11 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
         obs_r = [];
     end
     
-    MoveData = load([dir 'robotMovePath_3_' num2str(file_ctr) '.txt']);
+    if (isfile([dir 'robotMovePath_3_' num2str(file_ctr) '.txt']))
+        MoveData = load([dir 'robotMovePath_1_' num2str(file_ctr) '.txt']);
+    else
+        MoveData = load([dir 'robotMovePath_1_' num2str(file_ctr) '.txt']);
+    end
     move_x = MoveData(:,1);
     move_y = MoveData(:,2);
     move_z = MoveData(:,3);
@@ -179,7 +183,7 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
         move_y2 = MoveData2(:,2);
         move_z2 = MoveData2(:,3);
     
-        MoveData3 = load([dir 'robotMovePath_1_' num2str(file_ctr) '.txt']);
+        MoveData3 = load([dir 'robotMovePath_3_' num2str(file_ctr) '.txt']);
         move_x3 = MoveData3(:,1);
         move_y3 = MoveData3(:,2);
         move_z3 = MoveData3(:,3);
@@ -498,8 +502,8 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     if (~isnan(move_x4))
         %uncomment with 4
 %     plot3(c_move_x2(end), c_move_y2(end), c_move_z2(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',12)
-    plot3(c_move_x3(end), c_move_y3(end), c_move_z3(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',12)
-    plot3(c_move_x4(end), c_move_y4(end), c_move_z4(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.319607843, 0.937254902],'MarkerSize',12)
+    %plot3(c_move_x3(end), c_move_y3(end), c_move_z3(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',12)
+    %plot3(c_move_x4(end), c_move_y4(end), c_move_z4(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.319607843, 0.937254902],'MarkerSize',12)
     end
     
     if (size(ObstacleData,1) > 10)

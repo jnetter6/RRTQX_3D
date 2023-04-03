@@ -354,8 +354,8 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
         len = dist(BVPEnds[i][size(BVPEnds[i])[1] - 1][:], BVPEnds[i][size(BVPEnds[i])[1]][:])
         lastVel[i] = kdAndLV[2]
         #println("BVP Change!")
-        println(i)
-        println(vCounter[i])
+        #println(i)
+        #println(vCounter[i])
         push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), i))
         #Saving level of rationality of a BVP
         if ((maxKDs[i][size(maxKDs[i])[1] - 1]) > (kdAndLV[1] + .1))
@@ -455,8 +455,13 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
       nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 1.5*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 1.5*(currPos[i][3]-prevPosAvg[i][3][3]))]
       #nextPos2[i] = [(currPos[i][1] + 3*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 3*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 3*(currPos[i][3]-prevPosAvg[i][3][3]))]
 
-      currObs = SphereObstacle(currPos[i], (1.5))
-      nextObs = SphereObstacle(nextPos[i], (3.0))
+      if (i in lvl1s)
+        currObs = SphereObstacle(currPos[i], (1.2)*.65)
+        nextObs = SphereObstacle(nextPos[i], (2.0)*.65)
+      else
+        currObs = SphereObstacle(currPos[i], (1.2))
+        nextObs = SphereObstacle(nextPos[i], (2.0))
+      end
       #2nd next obs optional
       #nextObs2 = SphereObstacle(nextPos2[i], (3.0))
     
@@ -504,23 +509,23 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
           end 
         end
       end
-      # if (i != 1)
-      #   if (Wdist(R[1].robotPose, currPos[i]) < robotSensorRange)
-      #     #if (level[i] == 0)
-      #       addObsToCSpace(S[1], currObs)
-      #     #end
-      #     if (Wdist(R[1].robotPose, nextPos[i]) > 1.5)
-      #       #if (level[i] == 0)
-      #         addObsToCSpace(S[1], nextObs)
-      #       #end
-      #     end
-      #     if (Wdist(R[1].robotPose, nextPos2[i]) > 1.5)
-      #       #if (level[i] == 0)
-      #         addObsToCSpace(S[1], nextObs2)
-      #       #end
-      #     end
-      #   end
-      # end
+      if (i != 1)
+        if (Wdist(R[1].robotPose, currPos[i]) < robotSensorRange)
+          #if (level[i] == 0)
+            addObsToCSpace(S[1], currObs)
+          #end
+          if (Wdist(R[1].robotPose, nextPos[i]) > 1.5)
+            #if (level[i] == 0)
+              addObsToCSpace(S[1], nextObs)
+            #end
+          end
+          #if (Wdist(R[1].robotPose, nextPos2[i]) > 1.5)
+            #if (level[i] == 0)
+              #addObsToCSpace(S[1], nextObs2)
+            #end
+          #end
+        end
+      end
       # if (i != 2)
       #   if (Wdist(R[2].robotPose, currPos[i]) < robotSensorRange)
       #     #if (level[i] == 0)
@@ -732,7 +737,7 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
       
 
       truncElapsedTime = floor(S[i].elapsedTime * 1000)/1000
-      if i == 1
+      if (i == 1 && mod(sliceCounter,10) == 0)
         println("slice $(sliceCounter) --- $(truncElapsedTime) -------- $(S[i].moveGoal.rrtTreeCost) $(S[i].moveGoal.rrtLMC) ----")
       end
 

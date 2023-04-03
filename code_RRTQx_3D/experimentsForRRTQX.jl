@@ -34,25 +34,25 @@ function sim_RRTQX()
   total_time = 7.0       # total planning time (move after this, and keep planning)
   slice_time = 2.5/10.0       # for saving data
 
-  envRad = 20 # 50.0          # environment spans -envRad to envRad in each dimension
+  envRad = 15 # 50.0          # environment spans -envRad to envRad in each dimension
   robotRad = 0.5
   # robotSensorRange = 0.4
-  #start = [8.9 -0.5 -13.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  #goal = [-8.0 0.5 -13.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  #start2 = [-10.5 -1.0 -13.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  #goal2 = [8.3 1.0 -13.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  #start3 = [2.0 9.0 -13.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
-  #goal3 = [-1.0 -9.5 -13.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  #start4 = [1.5 -9.0 -12.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
-  #goal4 = [-2.5 9.5 -12.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  start = [8.9 7.5 -13.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  goal = [-9.0 -7.5 -13.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  start2 = [-10.5 -7.5 -13.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
-  goal2 = [8.3 7.5 -13.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  start3 = [2.0 12.0 -13.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
-  goal3 = [-1.0 -12.5 -13.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
-  start4 = [1.5 -12.0 -12.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
-  goal4 = [-2.5 12.5 -12.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start = [8.9 -0.5 -3.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  goal = [-8.0 0.5 -3.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
+  start2 = [-10.5 1.0 -3.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
+  goal2 = [8.3 1.0 -3.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start3 = [2.0 9.0 -3.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
+  goal3 = [-1.0 -9.5 -3.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  start4 = [1.5 -9.0 -2.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
+  goal4 = [-2.5 9.5 -2.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  #start = [8.9 7.5 -13.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  #goal = [-9.0 -7.5 -13.0] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
+  #start2 = [-10.5 -7.5 -13.0] # 5*[0.0 -8.0]   # robot goes to here (start location of search tree) [15.0 -10.0]
+  #goal2 = [8.3 7.5 -13.0] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  #start3 = [2.0 12.0 -13.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
+  #goal3 = [-1.0 -12.5 -13.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
+  #start4 = [1.5 -12.0 -12.5] # 5*[0.0 -8.0 10.0]   # robot goes to here (start location of search tree) [15.0 -10.0 10.0]
+  #goal4 = [-2.5 12.5 -12.5] # [-40.0 40.0 10.0]    # robot comes from here (goal location of search tree) [-18.0 18.0 10.0]
 
 
   lvl1s = [2]
@@ -60,7 +60,7 @@ function sim_RRTQX()
 
   # start = [0.0 -8.]
   # goal = [-7.0 7.]
-  obstacleFile = "environments/buildingsSmall.txt" # Dynamic_5: ACC 20; Static_5: small envir;
+  obstacleFile = "environments/empty.txt" # Dynamic_5: ACC 20; Static_5: small envir;
   # MUST ALSO BE CHANGED IN RRTQX.JL!!!!
   # obstacleFile = "environments/empty.txt"
   # success(`mkdir experiments/$(expName)`)
