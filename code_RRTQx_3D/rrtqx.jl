@@ -452,7 +452,7 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
       #Generating 2 obstacles along the estimated path of each agent      
       #nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPos[i][5][3]))]
       #nextPos2[i] = [(currPos[i][1] + 4*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 4*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 4*(currPos[i][3]-prevPos[i][5][3]))]
-      nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 1.5*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 1.5*(currPos[i][3]-prevPosAvg[i][3][3]))]
+      nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPosAvg[i][3][3]))]
       #nextPos2[i] = [(currPos[i][1] + 3*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 3*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 3*(currPos[i][3]-prevPosAvg[i][3][3]))]
 
       if (i in lvl1s)
@@ -501,11 +501,11 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
                 addObsToCSpace(S[lvl1], nextObs)
               #end
             end
-            if (Wdist(R[lvl1].robotPose, nextPos2[i]) > 1.5)
+            #if (Wdist(R[lvl1].robotPose, nextPos2[i]) > 1.5)
               #if (level[i] == 0)
                 #addObsToCSpace(S[lvl1], nextObs2)
               #end
-            end
+            #end
           end 
         end
       end

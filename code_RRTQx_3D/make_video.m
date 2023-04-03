@@ -37,7 +37,7 @@ dir = 'temp/';
 %dir = 'temp_2d_forest/';
 %dir = 'Video_RRTMine_0.1/';
 file_ctr = 1;
-max_file_ctr = 65; %298, 314
+max_file_ctr = 135; %298, 314
 
 start_move_at_ctr = 40;
 
@@ -474,7 +474,7 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     %colormap(tempcolormap)
     %contourf(Zmin,countorLevels, 'EdgeColor', 'none')
     hold on
-    view(0,0)
+    view(135,60)
     %plot3(c_x, c_y, c_z, 'Color',[0.3,0.3,0.3],'LineWidth',.5)
     plot3(c_node_x, c_node_y, c_node_z, '.', 'Color',[0.3,0.3,0.3],'MarkerSize',.5)
     plot3(c_move_x, c_move_y, c_move_z, 'k', 'LineWidth',3)
@@ -506,14 +506,14 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     %plot3(c_move_x4(end), c_move_y4(end), c_move_z4(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.319607843, 0.937254902],'MarkerSize',12)
     end
     
-    if (size(ObstacleData,1) > 10)
-        for k = 1:10
+    if (size(ObstacleData,1) > 90)
+        for k = 1:90
             obs_x = (ObstacleData(k,1)-minXval)/contourGranularity+.5;
             obs_y = (ObstacleData(k,2)-minYval)/contourGranularity+.5;
             obs_z = (ObstacleData(k,3)-minZval)/contourGranularity+.5;
             if (ObstacleData(k,4) > 0)
                 [temp1, temp2, temp3] = sphere;
-                temp1 = temp1 * ObstacleData(k,4)/contourGranularity;
+                temp1 = temp3 * ObstacleData(k,4)/contourGranularity;
                 temp2 = temp2 * ObstacleData(k,4)/contourGranularity;
                 temp3 = temp3 * ObstacleData(k,4)/contourGranularity;
                 surf((temp1 + obs_x), (temp2 + obs_y), (temp3 + obs_z), ones(size(temp1))*50);
