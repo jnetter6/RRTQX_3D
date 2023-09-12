@@ -37,7 +37,7 @@ dir = 'temp/';
 %dir = 'temp_2d_forest/';
 %dir = 'Video_RRTMine_0.1/';
 file_ctr = 1;
-max_file_ctr = 20; %298, 314
+max_file_ctr = 200; %298, 314
 
 start_move_at_ctr = 30;
 

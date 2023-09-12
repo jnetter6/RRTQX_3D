@@ -37,15 +37,15 @@ dir = 'temp/';
 %dir = 'temp_2d_forest/';
 %dir = 'Video_RRTMine_0.1/';
 file_ctr = 1;
-max_file_ctr = 65; %298, 314
+max_file_ctr = 200; %298, 314
 
 start_move_at_ctr = 40;
 
-minXval = -20;
-minYval = -20;
-minZval = -18;
-maxXval = 20;
-maxYval = 20;
+minXval = -22;
+minYval = -22;
+minZval = -17;
+maxXval = 22;
+maxYval = 22;
 maxZval = 2;
 tickInterval = 10;
 
@@ -559,7 +559,7 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     %colormap(tempcolormap)
     %contourf(Zmin,countorLevels, 'EdgeColor', 'none')
     hold on
-    view(45,45)
+    view(135,90)
     %plot3(c_x, c_y, c_z, 'Color',[0.3,0.3,0.3],'LineWidth',.5)
     plot3(c_node_x, c_node_y, c_node_z, '.', 'Color',[0.3,0.3,0.3],'MarkerSize',.5)
     plot3(c_move_x, c_move_y, c_move_z, 'k', 'LineWidth',3)

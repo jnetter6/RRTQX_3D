@@ -41,12 +41,12 @@ max_file_ctr = 135; %298, 314
 
 start_move_at_ctr = 40;
 
-minXval = -20;
-minYval = -20;
+minXval = -12;
+minYval = -12;
 minZval = 0;
-maxXval = 20;
-maxYval = 20;
-maxZval = 20;
+maxXval = 12;
+maxYval = 12;
+maxZval = 15;
 tickInterval = 10;
 
 contourGranularity = 2.5; % x, y granularity for cost contour plot

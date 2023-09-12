@@ -187,13 +187,22 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
         obs_r = [];
     end
     MoveData = [13,6,0]; %small yellow
-    MoveData2 = [-7,-12,3]; %small pink
+    MoveData2 = [-7,-12,3]; %small blue
     MoveData3 = [13,-11,-5]; %small red
     MoveData4 = [-12,10,4]; %small green
     MoveData5 = [-8,-8,12];%big yellow
-    MoveData6 = [13,13,-11]; %big pink
+    MoveData6 = [13,13,-11]; %big blue
     MoveData7 = [-7,12,6]; %big red
     MoveData8 = [13,4,-6.5]; %big green
+    
+    startv1 = [[13,4];[6,2];[0,6]]; %yellow
+    endv1 = [[4,-8];[2,-8];[6,12]];
+    startv2 = [[-7,-2,0];[-12,-12,2];[3,1,-1]]; %blue
+    endv2 = [[-3,0,13];[-12,2,13];[1,-1,-11]];
+    startv3 = [[13,4];[-11,2];[-5,3]]; %red
+    endv3 = [[4,-7];[2,12];[3,6]];
+    startv4 = [[-12,-3,3];[10,9,8];[4,1,-1]]; %green
+    endv4 = [[-3,3,13];[9,8,4];[1,-1,-6.5]];
     move_x5 = MoveData5(:,1);
     move_y5 = MoveData5(:,2);
     move_z5 = MoveData5(:,3);
@@ -620,43 +629,115 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     else
       plot3(c_path_x(end), c_path_y(end), c_node_z(end), 'sw', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor','w','MarkerSize',8)
     end
-    plot3(c_move_x(end), c_move_y(end), c_move_z(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',16)
+    plot3(c_move_x(end), c_move_y(end), c_move_z(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',30)
     if (~isnan(move_x4))
-    plot3(c_move_x2(end), c_move_y2(end), c_move_z2(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.419607843, 0.8],'MarkerSize',16)
-    plot3(c_move_x3(end), c_move_y3(end), c_move_z3(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0, 0.137254902],'MarkerSize',16)
-    plot3(c_move_x4(end), c_move_y4(end), c_move_z4(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.000000000, 0.819607843, 0.137254902],'MarkerSize',16)
-    plot3(c_move_x5(end), c_move_y5(end), c_move_z5(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',30)
-    plot3(c_move_x6(end), c_move_y6(end), c_move_z6(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.419607843, 0.8],'MarkerSize',30)
-    plot3(c_move_x7(end), c_move_y7(end), c_move_z7(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.0, 0.137254902],'MarkerSize',30)
-    plot3(c_move_x8(end), c_move_y8(end), c_move_z8(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.000000000, 0.819607843, 0.137254902],'MarkerSize',30)
+    plot3(c_move_x2(end), c_move_y2(end), c_move_z2(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.000000000, 0.419607843, 0.8],'MarkerSize',30)
+    plot3(c_move_x3(end), c_move_y3(end), c_move_z3(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0, 0.137254902],'MarkerSize',30)
+    plot3(c_move_x4(end), c_move_y4(end), c_move_z4(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.000000000, 0.819607843, 0.137254902],'MarkerSize',30)
+    plot3(c_move_x5(end), c_move_y5(end), c_move_z5(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.819607843, 0.137254902],'MarkerSize',30) %yellow
+    plot3(c_move_x6(end), c_move_y6(end), c_move_z6(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.000000000, 0.419607843, 0.8],'MarkerSize',30) %blue
+    plot3(c_move_x7(end), c_move_y7(end), c_move_z7(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[1.000000000, 0.0, 0.137254902],'MarkerSize',30) %red
+    plot3(c_move_x8(end), c_move_y8(end), c_move_z8(end), 'o', 'LineWidth',1, 'MarkerEdgeColor','k','MarkerFaceColor',[0.000000000, 0.819607843, 0.137254902],'MarkerSize',30) %green
     end
-    buildingOrigin = [((-10 - minXval)/contourGranularity+.5), ((-10 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
+    startv1_x = startv1(1,:);
+    startv1_y = startv1(2,:);
+    startv1_z = startv1(3,:);
+    endv1_x = endv1(1,:);
+    endv1_y = endv1(2,:);
+    endv1_z = endv1(3,:);
+    c_startv1_x = (startv1_x-minXval)/contourGranularity+.5;
+    c_startv1_y = (startv1_y-minXval)/contourGranularity+.5;
+    c_startv1_z = (startv1_z-minXval)/contourGranularity+.5;
+    c_endv1_x = (endv1_x-minXval)/contourGranularity+.5;
+    c_endv1_y = (endv1_y-minXval)/contourGranularity+.5;
+    c_endv1_z = (endv1_z-minXval)/contourGranularity+.5;
+    startv2_x = startv2(1,:);
+    startv2_y = startv2(2,:);
+    startv2_z = startv2(3,:);
+    endv2_x = endv2(1,:);
+    endv2_y = endv2(2,:);
+    endv2_z = endv2(3,:);
+    c_startv2_x = (startv2_x-minXval)/contourGranularity+.5;
+    c_startv2_y = (startv2_y-minXval)/contourGranularity+.5;
+    c_startv2_z = (startv2_z-minXval)/contourGranularity+.5;
+    c_endv2_x = (endv2_x-minXval)/contourGranularity+.5;
+    c_endv2_y = (endv2_y-minXval)/contourGranularity+.5;
+    c_endv2_z = (endv2_z-minXval)/contourGranularity+.5;
+    startv3_x = startv3(1,:);
+    startv3_y = startv3(2,:);
+    startv3_z = startv3(3,:);
+    endv3_x = endv3(1,:);
+    endv3_y = endv3(2,:);
+    endv3_z = endv3(3,:);
+    c_startv3_x = (startv3_x-minXval)/contourGranularity+.5;
+    c_startv3_y = (startv3_y-minXval)/contourGranularity+.5;
+    c_startv3_z = (startv3_z-minXval)/contourGranularity+.5;
+    c_endv3_x = (endv3_x-minXval)/contourGranularity+.5;
+    c_endv3_y = (endv3_y-minXval)/contourGranularity+.5;
+    c_endv3_z = (endv3_z-minXval)/contourGranularity+.5;
+    startv4_x = startv4(1,:);
+    startv4_y = startv4(2,:);
+    startv4_z = startv4(3,:);
+    endv4_x = endv4(1,:);
+    endv4_y = endv4(2,:);
+    endv4_z = endv4(3,:);
+    c_startv4_x = (startv4_x-minXval)/contourGranularity+.5;
+    c_startv4_y = (startv4_y-minXval)/contourGranularity+.5;
+    c_startv4_z = (startv4_z-minXval)/contourGranularity+.5;
+    c_endv4_x = (endv4_x-minXval)/contourGranularity+.5;
+    c_endv4_y = (endv4_y-minXval)/contourGranularity+.5;
+    c_endv4_z = (endv4_z-minXval)/contourGranularity+.5;
+    for k = 1:length(c_startv1_x)
+       plot3([c_startv1_x(k),c_endv1_x(k)],...
+           [c_startv1_y(k),c_endv1_y(k)],...
+           [c_startv1_z(k),c_endv1_z(k)], '--',...
+           'LineWidth', 4, 'Color', [1.000000000, 0.819607843, 0.137254902], 'MarkerSize', 10);
+    end
+    for k = 1:length(c_startv2_x)
+       plot3([c_startv2_x(k),c_endv2_x(k)],...
+           [c_startv2_y(k),c_endv2_y(k)],...
+           [c_startv2_z(k),c_endv2_z(k)], '--',...
+           'LineWidth', 4, 'Color', [0.000000000, 0.419607843, 0.8], 'MarkerSize', 10);
+    end
+    for k = 1:length(c_startv3_x)
+       plot3([c_startv3_x(k),c_endv3_x(k)],...
+           [c_startv3_y(k),c_endv3_y(k)],...
+           [c_startv3_z(k),c_endv3_z(k)], '--',...
+           'LineWidth', 4, 'Color', [1.000000000, 0.0, 0.137254902], 'MarkerSize', 10);
+    end
+    for k = 1:length(c_startv4_x)
+       plot3([c_startv4_x(k),c_endv4_x(k)],...
+           [c_startv4_y(k),c_endv4_y(k)],...
+           [c_startv4_z(k),c_endv4_z(k)], '--',...
+           'LineWidth', 4, 'Color', [0.000000000, 0.819607843, 0.137254902], 'MarkerSize', 10);
+    end
+    buildingOrigin = [((-9 - minXval)/contourGranularity+.5), ((-10 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
     dim = [2.5, 2.5, 10];
     plotcube(dim, buildingOrigin, 1, [.3 .3 .3]);
-    buildingOrigin2 = [((-10 - minXval)/contourGranularity+.5), ((0 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
+    buildingOrigin2 = [((-9 - minXval)/contourGranularity+.5), ((1 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
     dim2 = [2.5, 2.5, 15];
     plotcube(dim2, buildingOrigin2, 1, [.3 .3 .3]);
-    buildingOrigin3 = [((-10 - minXval)/contourGranularity+.5), ((10 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
+    buildingOrigin3 = [((-11 - minXval)/contourGranularity+.5), ((10 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
     dim3 = [2.5, 2.5, 5];
     plotcube(dim3, buildingOrigin3, 1, [.3 .3 .3]);
-    buildingOrigin4 = [((0 - minXval)/contourGranularity+.5), ((-10 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
-    dim4 = [2.5, 2.5, 12];
+    buildingOrigin4 = [((0 - minXval)/contourGranularity+.5), ((-13 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
+    dim4 = [2.5, 3.5, 12];
     plotcube(dim4, buildingOrigin4, 1, [.3 .3 .3]);
     buildingOrigin5 = [((0 - minXval)/contourGranularity+.5), ((0 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
-    dim = [2.5, 2.5, 3];
+    dim = [4.0, 2.5, 3];
     plotcube(dim, buildingOrigin5, 1, [.3 .3 .3]);
-    buildingOrigin6 = [((0 - minXval)/contourGranularity+.5), ((10 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
+    buildingOrigin6 = [((0 - minXval)/contourGranularity+.5), ((11 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
     dim6 = [2.5, 2.5, 15];
     plotcube(dim6, buildingOrigin6, 1, [.3 .3 .3]);
-    buildingOrigin7 = [((10 - minXval)/contourGranularity+.5), ((-10 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
+    buildingOrigin7 = [((8 - minXval)/contourGranularity+.5), ((-7 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
     dim7 = [2.5, 2.5, 5];
     plotcube(dim7, buildingOrigin7, 1, [.3 .3 .3]);
-    buildingOrigin8 = [((10 - minXval)/contourGranularity+.5), ((0 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
-    dim8 = [2.5, 2.5, 4];
+    buildingOrigin8 = [((12 - minXval)/contourGranularity+.5), ((2 - minYval)/contourGranularity+.5), ((-18- minZval)/contourGranularity+.5)];
+    dim8 = [5, 3.5, 4];
     plotcube(dim8, buildingOrigin8, 1, [.3 .3 .3]);
-    buildingFloor = [((-17.5 - minXval)/contourGranularity+.5), ((-17.5 - minYval)/contourGranularity+.5), ((-20- minZval)/contourGranularity+.5)];
-    dim5 = [16, 16, .5];
-    plotcube(dim5, buildingFloor, 1, [.3 1 .3]);
+    %buildingFloor = [((-17.5 - minXval)/contourGranularity+.5), ((-17.5 - minYval)/contourGranularity+.5), ((-20- minZval)/contourGranularity+.5)];
+    %dim5 = [16, 16, .5];
+    %plotcube(dim5, buildingFloor, 1, [.3 1 .3]);
     
     if (size(ObstacleData,1) > 90)
         for k = 1:90
@@ -744,14 +825,15 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
 
     
     
-    hold off
-    axis([1, size(Z,1), 1, size(Z,2)-1])
-    set(gca,'XTick',c_theXticks)
-    set(gca,'XTickLabel', theXticks)
-    set(gca,'YTick',c_theYticks)
-    set(gca,'YTickLabel', theYticks)
-    set(gca,'ZTick',c_theZticks)
-    set(gca,'ZTickLabel', theZticks)
+    hold on
+    axis off
+%     axis([1, size(Z,1), 1, size(Z,2)-1])
+%     set(gca,'XTick',c_theXticks)
+%     set(gca,'XTickLabel', theXticks)
+%     set(gca,'YTick',c_theYticks)
+%     set(gca,'YTickLabel', theYticks)
+%     set(gca,'ZTick',c_theZticks)
+%     set(gca,'ZTickLabel', theZticks)
     %set(gca,'FontSize',20)
     %colorbar
     %title('Decentralized RRTQ^X')
@@ -761,7 +843,6 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     %set(gcf,'Renderer','zbuffer');
     
     F = getframe(fig);
-    writeVideo(writerObj,F);
     
     file_ctr = file_ctr + 1; 
     %if file_ctr >= 20
@@ -769,4 +850,3 @@ while exist([dir 'robotMovePath_1_' num2str(file_ctr) '.txt'], 'file')  && file_
     %end
 end
 % close video file
-close(writerObj);
