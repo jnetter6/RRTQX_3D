@@ -1,4 +1,4 @@
-function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_time::Float64,
+function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_time::Float64, slice_time::Float64,
   delta::Float64, ballConstant::Float64, changeThresh::Float64,
   searchType::String, MoveRobotFlag::Bool, saveVideoData::Bool, obstacleFile::String,
   statsArgs...) where {TS}
@@ -6,7 +6,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   T = RRTNode{Float64}
 
   # NOTE THIS IS HARD CODED HERE (SHOULD PROBABLY MAKE INPUT ARGUMENT)
-  robotSensorRange = 10 # 20 # used for "sensing" obstacles
+  robotSensorRange = 15 # 20 # used for "sensing" obstacles
 
   if length(statsArgs) >= 2
 	dataFileName = statsArgs[2]
@@ -74,6 +74,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
                                               # desire to insert in the future in
                                               # (used when an obstacle is removed
     S[i].delta = delta
+    S[i].replannedPath = false
   end
 
   robotRads = S[1].robotRadius
@@ -117,11 +118,20 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
 
   moveGoals = []
   currPosAtMoveGoals = []
+  #BVPsAccordingToAgents = []
+  wasPathReplanned = []
+  realLengths = []
+  fullRealBVPData = []
   for i = 1:N
     push!(moveGoals, [])
     push!(currPosAtMoveGoals, [])
+    #push!(BVPsAccordingToAgents, [])
+    push!(wasPathReplanned, [])
+    push!(realLengths, [])
+    push!(fullRealBVPData, [])
     push!(moveGoals[i], S[i].moveGoal.position)
     push!(currPosAtMoveGoals[i], S[i].start)
+    #push!(BVPsAccordingToAgents[i], [S[i].start, S[i].moveGoal.position])
   end
 
   # paramiters that have to do with the robot path following simulation
@@ -182,6 +192,7 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   oldrrtLMC = []
   timeForGC = []
   robot_slice_start = time_ns()
+  
   for i = 1:N
     S[i].startTimeNs = robot_slice_start
     S[i].elapsedTime = 0.0
@@ -203,6 +214,8 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   pastVels = []
   distAndVelError = []
   allBVPs = []
+  BVPsWithRationality = []
+  BVPsWithRationalityRatio = []
   angAndTimeSince = []
   savedAngle = []
   timeSinceLastSave = []
@@ -290,6 +303,8 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
 
   BVPEnds = []
   maxKDs = []
+  realMaxKD = []
+  realMaxKDs = []
   whichBVP = []
   level = []
   for i = 1:N
@@ -297,6 +312,8 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     push!(BVPEnds, tempEnds)
     push!(maxKDs, [])
     push!(maxKDs[i], 0.0)
+    push!(realMaxKDs, [])
+    push!(realMaxKD, 0.0)
     push!(whichBVP, 1)
     push!(level, 0)
   end
@@ -307,20 +324,20 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
   for i = 1:N
     push!(BVPCounter, 0)
     push!(BVPJustChanged, false)
-    push!(NextBVPCheck, true)
+    push!(NextBVPCheck, 0)
   end
 
   while true
     for i = 1:N
       #Quick check to make sure its worth measuring BVPs
-      if (NextBVPCheck[i] == false)
-        if (BVPCounter[i] > 5)
-          BVPCounter[i] = 0
-          NextBVPCheck[i] = true
-        else
-          BVPCounter[i] += 1
-        end
-      end
+      #if (NextBVPCheck[i] == false)
+      #  if (BVPCounter[i] > 5)
+      #    BVPCounter[i] = 0
+      #    NextBVPCheck[i] = true
+      #  else
+      #    BVPCounter[i] += 1
+      #  end
+      #end
       #We save the most recent BVP angle and how long since the one before
       if (BVPJustChanged[i] == true)
         if (i == 1)
@@ -333,20 +350,26 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
         BVPJustChanged[i] = false
         whichBVP[i] += 1
         push!(maxKDs[i], 0.0)
-        #kdAndLV = sim_TNNLS_B_CT_Local_Max(BVPEnds[i][size(BVPEnds[i])[1] - 1][:], BVPEnds[i][size(BVPEnds[i])[1]][:], lastVel[i])
+        kdAndLV = sim_TNNLS_B_CT_Local_Max(BVPEnds[i][size(BVPEnds[i])[1] - 1][:], BVPEnds[i][size(BVPEnds[i])[1]][:], lastVel[i])
         len = dist(BVPEnds[i][size(BVPEnds[i])[1] - 1][:], BVPEnds[i][size(BVPEnds[i])[1]][:])
-        #lastVel[i] = kdAndLV[2]
-        println("BVP Change!")
-        println(i)
-        println(vCounter[i])
+        lastVel[i] = kdAndLV[2]
+        #println("BVP Change!")
+        #println(i)
+        #println(vCounter[i])
         push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), i))
         #Saving level of rationality of a BVP
-        #if ((maxKDs[i][size(maxKDs[i])[1] - 1]) > (kdAndLV[1] + .1))
-        #  level[i] = 1
-        #  push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 1, i))
-        #else
-        #  push!(allBVPs, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 0, i))
-        #end
+        if ((maxKDs[i][size(maxKDs[i])[1] - 1]) > (kdAndLV[1] + .1))
+          level[i] = 1
+          push!(BVPsWithRationality, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 1, i))
+        else
+          push!(BVPsWithRationality, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 0, i))
+        end
+        if ((maxKDs[i][size(maxKDs[i])[1] - 1]) > (kdAndLV[1]*1.1))
+          level[i] = 1
+          push!(BVPsWithRationalityRatio, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 1, i))
+        else
+          push!(BVPsWithRationalityRatio, (len, (maxKDs[i][size(maxKDs[i])[1] - 1]), 0, i))
+        end
       end
     end
 
@@ -360,9 +383,11 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       itOfCheck[i][checkPtr[i]] += 1
     end
     now_time = time_ns()
-
+    slice_end_time = []
+    for i = 1:N
+      push!(slice_end_time, ((1+sliceCounter)*slice_time))
+    end
     # calculate the end time of the first slice
-    slice_end_time = (1+sliceCounter)*slice_time
 
     # see if warmup time has ended
     warmUpTimeJustEnded = false
@@ -378,13 +403,16 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     if S[i].kino_dist > maxKDs[i][whichBVP[i]]
       maxKDs[i][whichBVP[i]] = S[i].kino_dist
     end
+    if S[i].kino_dist > realMaxKD[i]
+      realMaxKD[i] = S[i].kino_dist
+    end
 
 	  if S[i].kino_dist > S[i].augDist
 
       # not count in time for Minkowski sum
       before_save_time = time_ns()
 
-      println("--------------------------------------------------------------------- New KD: $(S[i].kino_dist)")
+      #println("--------------------------------------------------------------------- New KD: $(S[i].kino_dist)")
 
 	    S[i].augDist = S[i].kino_dist
   	  obstacleAugmentation(S[i], S[i].augDist)
@@ -427,23 +455,30 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       #Generating 2 obstacles along the estimated path of each agent      
       #nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPos[i][5][3]))]
       #nextPos2[i] = [(currPos[i][1] + 4*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 4*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 4*(currPos[i][3]-prevPos[i][5][3]))]
-      nextPos[i] = [(currPos[i][1] + 1.5*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 1.5*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 1.5*(currPos[i][3]-prevPosAvg[i][3][3]))]
+      nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPosAvg[i][3][3]))]
       nextPos2[i] = [(currPos[i][1] + 3*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 3*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 3*(currPos[i][3]-prevPosAvg[i][3][3]))]
 
-      currObs = SphereObstacle(currPos[i], (1.5))
-      nextObs = SphereObstacle(nextPos[i], (3.0))
-      nextObs2 = SphereObstacle(nextPos2[i], (3.0))
+      if (i in lvl1s)
+        currObs = SphereObstacle(currPos[i], (1.2)*.65)
+        nextObs = SphereObstacle(nextPos[i], (2.0)*.65)
+      else
+        currObs = SphereObstacle(currPos[i], (1.2))
+        nextObs = SphereObstacle(nextPos[i], (2.0))
+      end
+      #2nd next obs optional
+      nextObs2 = SphereObstacle(nextPos2[i], (2.0))
     
-      currObs.startTime = S[1].elapsedTime
-      currObs.lifeSpan = slice_time*3
+      currObs.startTime = S[i].elapsedTime
+      currObs.lifeSpan = slice_time*2
       currObs.obstacleUnused = false
 
-      nextObs.startTime = S[1].elapsedTime
-      nextObs.lifeSpan = slice_time*3
+      nextObs.startTime = S[i].elapsedTime
+      nextObs.lifeSpan = slice_time*2
       nextObs.obstacleUnused = false
 
-      nextObs2.startTime = S[1].elapsedTime
-      nextObs2.lifeSpan = slice_time*3
+      #other followup obs stuff
+      nextObs2.startTime = S[i].elapsedTime
+      nextObs2.lifeSpan = slice_time*2
       nextObs2.obstacleUnused = false
 
       #if (i != 2)
@@ -458,6 +493,25 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       #  end
       #end
       #This could be done through iteration but 1 and 2 were already done so I just continued
+      for lvl1 in lvl1s
+        if (i != lvl1)
+          if (Wdist(R[lvl1].robotPose, currPos[i]) < robotSensorRange)
+            #if (level[i] == 0)
+              addObsToCSpace(S[lvl1], currObs)
+            #end
+            if (Wdist(R[lvl1].robotPose, nextPos[i]) > 1.5)
+              #if (level[i] == 0)
+                addObsToCSpace(S[lvl1], nextObs)
+              #end
+            end
+            #if (Wdist(R[lvl1].robotPose, nextPos2[i]) > 1.5)
+              #if (level[i] == 0)
+                #addObsToCSpace(S[lvl1], nextObs2)
+              #end
+            #end
+          end 
+        end
+      end
       if (i != 1)
         if (Wdist(R[1].robotPose, currPos[i]) < robotSensorRange)
           #if (level[i] == 0)
@@ -475,57 +529,57 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
           end
         end
       end
-      if (i != 2)
-        if (Wdist(R[2].robotPose, currPos[i]) < robotSensorRange)
-          #if (level[i] == 0)
-            addObsToCSpace(S[2], currObs)
-          #end
-          if (Wdist(R[2].robotPose, nextPos[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[2], nextObs)
-            #end
-          end
-          if (Wdist(R[2].robotPose, nextPos2[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[2], nextObs2)
-            #end
-          end
-        end
-      end
-      if (i != 3)
-        if (Wdist(R[3].robotPose, currPos[i]) < robotSensorRange)
-          #if (level[i] == 0)
-            addObsToCSpace(S[3], currObs)
-          #end
-          if (Wdist(R[3].robotPose, nextPos[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[3], nextObs)
-            #end
-          end
-          if (Wdist(R[3].robotPose, nextPos2[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[3], nextObs2)
-            #end
-          end
-        end
-      end
-      if (i != 4)
-        if (Wdist(R[4].robotPose, currPos[i]) < robotSensorRange)
-          #if (level[i] == 0)
-            addObsToCSpace(S[4], currObs)
-          #end
-          if (Wdist(R[4].robotPose, nextPos[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[4], nextObs)
-            #end
-          end
-          if (Wdist(R[4].robotPose, nextPos2[i]) > 1.5)
-            #if (level[i] == 0)
-              addObsToCSpace(S[4], nextObs2)
-            #end
-          end
-        end
-      end
+      # if (i != 2)
+      #   if (Wdist(R[2].robotPose, currPos[i]) < robotSensorRange)
+      #     #if (level[i] == 0)
+      #       addObsToCSpace(S[2], currObs)
+      #     #end
+      #     if (Wdist(R[2].robotPose, nextPos[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[2], nextObs)
+      #       #end
+      #     end
+      #     if (Wdist(R[2].robotPose, nextPos2[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[2], nextObs2)
+      #       #end
+      #     end
+      #   end
+      # end
+      # if (i != 3)
+      #   if (Wdist(R[3].robotPose, currPos[i]) < robotSensorRange)
+      #     #if (level[i] == 0)
+      #       addObsToCSpace(S[3], currObs)
+      #     #end
+      #     if (Wdist(R[3].robotPose, nextPos[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[3], nextObs)
+      #       #end
+      #     end
+      #     if (Wdist(R[3].robotPose, nextPos2[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[3], nextObs2)
+      #       #end
+      #     end
+      #   end
+      # end
+      # if (i != 4)
+      #   if (Wdist(R[4].robotPose, currPos[i]) < robotSensorRange)
+      #     #if (level[i] == 0)
+      #       addObsToCSpace(S[4], currObs)
+      #     #end
+      #     if (Wdist(R[4].robotPose, nextPos[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[4], nextObs)
+      #       #end
+      #     end
+      #     if (Wdist(R[4].robotPose, nextPos2[i]) > 1.5)
+      #       #if (level[i] == 0)
+      #         addObsToCSpace(S[4], nextObs2)
+      #       #end
+      #     end
+      #   end
+      # end
     end
     end
     # remove obstacles at the required time
@@ -673,18 +727,19 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     for i = 1:N
     # if this robot has used all of its allotted planning time of this slice
     S[i].elapsedTime = (time_ns() - S[i].startTimeNs)/1000000000 - save_elapsed_time
-    if (S[i].elapsedTime >= slice_end_time)
-
+    if (S[i].elapsedTime >= slice_end_time[i])
       # calculate the end time of the next slice
-      slice_end_time = (1+sliceCounter)*slice_time
-
+      slice_end_time[i] = (1+sliceCounter)*slice_time
+      
       robot_slice_start = now_time
+
       if i == 1
         sliceCounter += 1
       end
+      
 
       truncElapsedTime = floor(S[i].elapsedTime * 1000)/1000
-      if i == 1
+      if (i == 1 && mod(sliceCounter,10) == 0)
         println("slice $(sliceCounter) --- $(truncElapsedTime) -------- $(S[i].moveGoal.rrtTreeCost) $(S[i].moveGoal.rrtLMC) ----")
       end
 
@@ -694,13 +749,14 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       currPos[i] = R[i].robotPose
       prevPos[i][1] = currPos[i]
       
-      if (i > 1)
-        if (actualPrevPos[i] != currPos[i])
-          playerAgentDist = sqrt((prevPos[i][1][1] - prevPos[1][1][1])^2 + (prevPos[i][1][2] - prevPos[1][1][2])^2 + (prevPos[i][1][3] - prevPos[1][1][3])^2)
+      #Adding noise
+      #if (i > 1)
+      #  if (actualPrevPos[i] != currPos[i])
+      #    playerAgentDist = sqrt((prevPos[i][1][1] - prevPos[1][1][1])^2 + (prevPos[i][1][2] - prevPos[1][1][2])^2 + (prevPos[i][1][3] - prevPos[1][1][3])^2)
           #println(playerAgentDist)
-          prevPos[i][1] = [(prevPos[i][1][1] + (0.01*rand(Float64) - .005)*playerAgentDist), (prevPos[i][1][2] + (0.01*rand(Float64) - .005)*playerAgentDist), (prevPos[i][1][3] + (0.01*rand(Float64) - .005)*playerAgentDist)]
-        end
-      end
+      #    prevPos[i][1] = [(prevPos[i][1][1] + (0.01*rand(Float64) - .005)*playerAgentDist), (prevPos[i][1][2] + (0.01*rand(Float64) - .005)*playerAgentDist), (prevPos[i][1][3] + (0.01*rand(Float64) - .005)*playerAgentDist)]
+      #  end
+      #end
 
       for j = 5:-1:1
         prevPosAvg[i][j] = [(((prevPos[i][(2*j)][1]) + (prevPos[i][(2*j-1)][1]))/2),(((prevPos[i][(2*j)][2]) + (prevPos[i][(2*j-1)][2]))/2), (((prevPos[i][(2*j)][3]) + (prevPos[i][(2*j-1)][3]))/2)]
@@ -722,9 +778,9 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
         #currVec = [(noisyCurrVec1[1] - noisyCurrVec2[1]), (noisyCurrVec1[2] - noisyCurrVec2[2]), (noisyCurrVec1[3] - noisyCurrVec2[3])]
         angle = acos(((pastVec[1]*currVec[1]) + (pastVec[2]*currVec[2]) + (pastVec[3]*currVec[3]))/(sqrt(pastVec[1]^2 + pastVec[2]^2 + pastVec[3]^2)*sqrt(currVec[1]^2 + currVec[2]^2 + currVec[3]^2)))
         angle = angle*(360/(2*pi))
-        if ((abs(angle) > 16) && (NextBVPCheck[i] == true))
+        if ((abs(angle) > 20) && (NextBVPCheck[i] < (vCounter[i] - 15)))
           BVPJustChanged[i] = true
-          NextBVPCheck[i] = false
+          NextBVPCheck[i] = vCounter[i]
           savedAngle[i] = angle
         else
           timeSinceLastSave[i] = timeSinceLastSave[i] + 1.0
@@ -775,6 +831,23 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
       if (last(moveGoals[i]) != S[i].moveGoal.position)
         push!(moveGoals[i], S[i].moveGoal.position)
         push!(currPosAtMoveGoals[i], currPos[i])
+        push!(wasPathReplanned[i], S[i].replannedPath)
+        push!(realMaxKDs[i], realMaxKD[i])
+        push!(realLengths[i], dist(currPosAtMoveGoals[i][size(currPosAtMoveGoals[i])[1] - 1], currPos[i]))
+        push!(fullRealBVPData[i], [realLengths[i][size(realLengths[i])[1]], realMaxKDs[i][size(realMaxKDs[i])[1]], wasPathReplanned[i][size(wasPathReplanned[i])[1]]])
+        S[i].replannedPath = false
+        realMaxKD[i] = 0.0
+        #Need: Length, KD of BVP, replanned
+        #Adding in BVPs to other agents, including some noise
+        for j = 1:N
+          if (j != i)
+            agentDist = dist(currPos[i], currPos[j])
+            noisyPos = [(currPos[i][1] + agentDist*(0.02*rand(Float64) - .01)), (currPos[i][2] + agentDist*(0.02*rand(Float64) - .01)), (currPos[i][3] + agentDist*(0.02*rand(Float64) - .01))]
+            noisyGoal = [(S[i].moveGoal.position[1] + agentDist*(0.02*rand(Float64) - .01)), (S[i].moveGoal.position[2] + agentDist*(0.02*rand(Float64) - .01)), (S[i].moveGoal.position[3] + agentDist*(0.02*rand(Float64) - .01))]
+            #push!(BVPsAccordingToAgents[j], [noisyPos, noisyGoal])
+            #push!(BVPsAccordingToAgents[j], [currPos[i], S[i].moveGoal.position])
+          end
+        end
       end
 
       if searchType == "RRT#" || searchType == "RRTx"
@@ -795,9 +868,10 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
 		# 		listPop(S.obstacles)
 		# 	end
 		# end
-
-        saveRRTTree(KD[i], "temp/edges_$(i)_$(vCounter[i]).txt")
-        saveRRTNodes(KD[i], "temp/nodes_$(i)_$(vCounter[i]).txt")
+        if(i == 1)
+          saveRRTTree(KD[i], "temp/edges_$(i)_$(vCounter[i]).txt")
+          saveRRTNodes(KD[i], "temp/nodes_$(i)_$(vCounter[i]).txt")
+        end
         #saveRRTNodesCollision(KD, "temp/Cnodes_$(vCounter[i]).txt")
         saveRRTPath_Q(S[i], S[i].moveGoal, root[i], R[i], "temp/path_$(i)_$(vCounter[i]).txt")
         saveObstacleLocations(S[i].obstacles, "temp/obstacles_$(i)_$(vCounter[i]).txt")
@@ -917,13 +991,20 @@ function multirrtqx(S::Array{TS}, N::Int64, total_planning_time::Float64, slice_
     #saveVels(pastVels[i], "temp/AApastVels_$(i).txt")
     #saveErrors(distAndVelError[i], "temp/AAErrors_$(i).txt")
     saveErrors(angAndTimeSince[i], "BVPData/angles_$(i).txt")
-    distances = findClosestObsToLineSegment(BVPEnds[i], staticObs)
+    #distances = findClosestObsToLineSegment(BVPEnds[i], staticObs)
     saveBVPEnds(BVPEnds[i], "BVPData/BVPEnds_$(i).txt")
-    saveBVPDists(distances, "BVPData/BVPDistFromStaticObs_$(i).txt")
+    #saveBVPDists(distances, "BVPData/BVPDistFromStaticObs_$(i).txt")
     saveMoveGoals(moveGoals[i], "BVPData/MoveGoals_$(i).txt")
+    #saveBools(wasPathReplanned[i], "BVPData/ReplannedFlags_$(i).txt")
+    #saveList(realLengths[i], "BVPData/RealLengths_$(i).txt")
+    #saveList(realMaxKDs[i], "BVPData/RealMaxKDs_$(i).txt")
     saveMoveGoals(currPosAtMoveGoals[i], "BVPData/ActualPosAtMoveGoals_$(i).txt")
+    #saveFullBVPs(BVPsAccordingToAgents[i], "BVPData/BVPsAccordingTo_$(i).txt")
+    saveMoveGoals(fullRealBVPData[i], "BVPData/FullRealBVPData_$(i).txt")
   end
   saveBVPs(allBVPs, "BVPData/BVPs.txt")
+  saveBVPs(BVPsWithRationality, "BVPData/BVPsWithRationality.txt")
+  saveBVPs(BVPsWithRationalityRatio, "BVPData/BVPsWithRationalityRatio.txt")
   #println(BVPEnds[1])
   #println(maxKDs)
   #println(level)

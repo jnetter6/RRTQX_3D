@@ -47,6 +47,14 @@ function saveData(data, fileName)
   close(fptr)
 end
 
+function saveList(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1]], ',')
+  end
+  close(fptr)
+end
+
 function saveVels(data, fileName)
   fptr = open(fileName, "w")
   for i = 1:size(data,1)
@@ -92,6 +100,26 @@ function saveMoveGoals(data, fileName)
   fptr = open(fileName, "w")
   for i = 1:size(data,1)
     writedlm(fptr, [data[i][1] data[i][2] data[i][3]], ',')
+  end
+  close(fptr)
+end
+
+function saveBools(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    if(data[i][1] == true)
+      writedlm(fptr, [1.0], ',')
+    else
+      writedlm(fptr, [0.0], ',')
+    end
+  end
+  close(fptr)
+end
+
+function saveFullBVPs(data, fileName)
+  fptr = open(fileName, "w")
+  for i = 1:size(data,1)
+    writedlm(fptr, [data[i][1][1] data[i][1][2] data[i][1][3] data[i][2][1] data[i][2][2] data[i][2][3]], ',')
   end
   close(fptr)
 end
@@ -2883,6 +2911,7 @@ function findNewTarget(S::TS, KD::TKD, R::RobotData, hyberBallRad::Float64) wher
   R.robotEdgeForPlottingUsed = false
   R.distAlongRobotEdgeForPlotting = 0.0
   R.timeAlongRobotEdgeForPlotting = 0.0
+  S.replannedPath = true
 
   println("move target has become invalid")
   searchBallRad = max(hyberBallRad, dist(R.robotPose, R.nextMoveTarget.position))
@@ -3828,9 +3857,9 @@ function saveOriginalObstacleLocations_Q(obstacles::List{SphereObstacle}, fileNa
     end
 
     for i = 1:size(ob.polygonWithoutAug,1)
-      writedlm(fptr, reshape(ob.polygonWithoutAug[i,:], 1, length(ob.polygonWithoutAug[i,:])), ',')
+      writedlm(fptr, reshape(ob.polygonWithoutAug[i,:], 1, 3.25), ',')
     end
-    writedlm(fptr, reshape(ob.polygonWithoutAug[1,:], 1, length(ob.polygonWithoutAug[1, :])), ',')
+    writedlm(fptr, reshape(ob.polygonWithoutAug[1,:], 1, 3.25), ',')
     writedlm(fptr, [NaN NaN], ',')
     listNode = listNode.child
   end

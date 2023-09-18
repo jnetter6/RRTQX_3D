@@ -1110,7 +1110,7 @@ function moveRobot_Q(S, Q, KD, slice_time, root, hyberBallRad, R, localPoseAndKd
 	  # R.numEsqTrigPoints += R.numLocalEsqTrigPoints
 	  # S.numEsqTrigCovered = S.numEsqTrigCoveredNext
 
-	  println("new robot pose: [$(R.robotPose[1]) $(R.robotPose[2]) $(R.robotPose[3])]")# --- new kino dist: $(getindex(localPoseAndKd[S.numCoveredLocal],2))")
+	  #println("new robot pose: [$(R.robotPose[1]) $(R.robotPose[2]) $(R.robotPose[3])]")# --- new kino dist: $(getindex(localPoseAndKd[S.numCoveredLocal],2))")
 	else
 	  # movement has just started, so remember that the robot is now moving
 	  R.moving = true
@@ -1123,7 +1123,7 @@ function moveRobot_Q(S, Q, KD, slice_time, root, hyberBallRad, R, localPoseAndKd
 
 	if R.currentMoveInvalid
 	  # save covered Esq & Trig
-  	  S.NormEsqvec = [S.NormEsqvec; localNormEsq[1:Int(ceil(S.numEsqTrigLocal*S.numCoveredLocal/S.numLocal))]]
+  	  S.NormEsqvec = [S.NormEsqvec; localNormEsq[1:2]]
 	  S.TrigCondvec = [S.TrigCondvec; localTrigCond[1:Int(ceil(S.numEsqTrigLocal*S.numCoveredLocal/S.numLocal))]]
 	  # println("localNormEsq = $(localNormEsq[1:Int(ceil(S.numEsqTrigLocal*S.numCoveredLocal/S.numLocal))])")
 	  # println("localTrigCond = $(localTrigCond[1:Int(ceil(S.numEsqTrigLocal*S.numCoveredLocal/S.numLocal))])")
