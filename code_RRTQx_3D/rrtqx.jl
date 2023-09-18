@@ -383,7 +383,10 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
       itOfCheck[i][checkPtr[i]] += 1
     end
     now_time = time_ns()
-    slice_end_time = (1+sliceCounter)*slice_time
+    slice_end_time = []
+    for i = 1:N
+      push!(slice_end_time, ((1+sliceCounter)*slice_time))
+    end
     # calculate the end time of the first slice
 
     # see if warmup time has ended
@@ -453,7 +456,7 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
       #nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPos[i][5][3]))]
       #nextPos2[i] = [(currPos[i][1] + 4*(currPos[i][1]-prevPos[i][5][1])) (currPos[i][2] + 4*(currPos[i][2]-prevPos[i][5][2])) (currPos[i][3] + 4*(currPos[i][3]-prevPos[i][5][3]))]
       nextPos[i] = [(currPos[i][1] + 2*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 2*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 2*(currPos[i][3]-prevPosAvg[i][3][3]))]
-      #nextPos2[i] = [(currPos[i][1] + 3*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 3*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 3*(currPos[i][3]-prevPosAvg[i][3][3]))]
+      nextPos2[i] = [(currPos[i][1] + 3*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 3*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 3*(currPos[i][3]-prevPosAvg[i][3][3]))]
 
       if (i in lvl1s)
         currObs = SphereObstacle(currPos[i], (1.2)*.65)
@@ -463,7 +466,7 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
         nextObs = SphereObstacle(nextPos[i], (2.0))
       end
       #2nd next obs optional
-      #nextObs2 = SphereObstacle(nextPos2[i], (3.0))
+      nextObs2 = SphereObstacle(nextPos2[i], (2.0))
     
       currObs.startTime = S[i].elapsedTime
       currObs.lifeSpan = slice_time*2
@@ -474,9 +477,9 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
       nextObs.obstacleUnused = false
 
       #other followup obs stuff
-      #nextObs2.startTime = S[i].elapsedTime
-      #nextObs2.lifeSpan = slice_time*2
-      #nextObs2.obstacleUnused = false
+      nextObs2.startTime = S[i].elapsedTime
+      nextObs2.lifeSpan = slice_time*2
+      nextObs2.obstacleUnused = false
 
       #if (i != 2)
       #  if (Wdist(R[2].robotPose, currPos[i]) < robotSensorRange)
@@ -519,11 +522,11 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
               addObsToCSpace(S[1], nextObs)
             #end
           end
-          #if (Wdist(R[1].robotPose, nextPos2[i]) > 1.5)
+          if (Wdist(R[1].robotPose, nextPos2[i]) > 1.5)
             #if (level[i] == 0)
-              #addObsToCSpace(S[1], nextObs2)
+              addObsToCSpace(S[1], nextObs2)
             #end
-          #end
+          end
         end
       end
       # if (i != 2)
@@ -724,10 +727,9 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
     for i = 1:N
     # if this robot has used all of its allotted planning time of this slice
     S[i].elapsedTime = (time_ns() - S[i].startTimeNs)/1000000000 - save_elapsed_time
-    if (S[i].elapsedTime >= slice_end_time)
-
+    if (S[i].elapsedTime >= slice_end_time[i])
       # calculate the end time of the next slice
-      slice_end_time = (1+sliceCounter)*slice_time
+      slice_end_time[i] = (1+sliceCounter)*slice_time
       
       robot_slice_start = now_time
 
