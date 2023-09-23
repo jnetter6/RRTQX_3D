@@ -459,26 +459,26 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
       nextPos2[i] = [(currPos[i][1] + 3*(currPos[i][1]-prevPosAvg[i][3][1])) (currPos[i][2] + 3*(currPos[i][2]-prevPosAvg[i][3][2])) (currPos[i][3] + 3*(currPos[i][3]-prevPosAvg[i][3][3]))]
 
       if (i in lvl1s)
-        currObs = SphereObstacle(currPos[i], (1.2)*.65)
-        nextObs = SphereObstacle(nextPos[i], (2.0)*.65)
+        currObs = SphereObstacle(currPos[i], (2.2)*.65)
+        nextObs = SphereObstacle(nextPos[i], (3.0)*.65)
       else
-        currObs = SphereObstacle(currPos[i], (1.2))
-        nextObs = SphereObstacle(nextPos[i], (2.0))
+        currObs = SphereObstacle(currPos[i], (2.2))
+        nextObs = SphereObstacle(nextPos[i], (3.0))
       end
       #2nd next obs optional
-      nextObs2 = SphereObstacle(nextPos2[i], (2.0))
+      nextObs2 = SphereObstacle(nextPos2[i], (3.0))
     
       currObs.startTime = S[i].elapsedTime
-      currObs.lifeSpan = slice_time*2
+      currObs.lifeSpan = slice_time*4
       currObs.obstacleUnused = false
 
       nextObs.startTime = S[i].elapsedTime
-      nextObs.lifeSpan = slice_time*2
+      nextObs.lifeSpan = slice_time*4
       nextObs.obstacleUnused = false
 
       #other followup obs stuff
       nextObs2.startTime = S[i].elapsedTime
-      nextObs2.lifeSpan = slice_time*2
+      nextObs2.lifeSpan = slice_time*4
       nextObs2.obstacleUnused = false
 
       #if (i != 2)
@@ -504,11 +504,11 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
                 addObsToCSpace(S[lvl1], nextObs)
               #end
             end
-            #if (Wdist(R[lvl1].robotPose, nextPos2[i]) > 1.5)
+            if (Wdist(R[lvl1].robotPose, nextPos2[i]) > 1.5)
               #if (level[i] == 0)
-                #addObsToCSpace(S[lvl1], nextObs2)
+                addObsToCSpace(S[lvl1], nextObs2)
               #end
-            #end
+            end
           end 
         end
       end
@@ -523,9 +523,9 @@ function multirrtqx(S::Array{TS}, N::Int64, lvl1s::Array{Int64}, total_planning_
             #end
           end
           if (Wdist(R[1].robotPose, nextPos2[i]) > 1.5)
-            #if (level[i] == 0)
+            if (i != lvl1s[1])
               addObsToCSpace(S[1], nextObs2)
-            #end
+            end
           end
         end
       end
